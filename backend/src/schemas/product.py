@@ -1,0 +1,26 @@
+from typing import Optional,List
+from pydantic import BaseModel
+
+class ProductoCreate(BaseModel):
+    nombre: str
+    precio: float
+    disponible: bool = True
+    tags : List[str] = []
+    descripcion: Optional[str] = None
+    cityId: Optional[int] = None
+
+class ProductoOut(BaseModel):
+    id: int
+    nombre: str
+    precio: float
+    descripcion: Optional[str] = None
+    tags : List[str] = []
+    disponible: bool = True
+    cityId: Optional[int] = None
+    
+    class Config:
+        from_attributes = True
+
+    
+    
+    

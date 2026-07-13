@@ -1,12 +1,6 @@
-from typing import Optional,List
-from pydantic import BaseModel
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
 
-class Producto(BaseModel):
-    nombre: str
-    precio: float
-    disponible: bool = True
-    tags : List[str] = []
-    descripcion: Optional[str] = None
+
     
     
     
