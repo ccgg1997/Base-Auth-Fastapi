@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from src.schemas.product import ProductoCreate, ProductoOut
+from src.dtos.product import ProductoCreate, ProductoOut
 
 from src.db.base import Base
 from src.db.session import engine

@@ -1,5 +1,5 @@
 from typing import Optional,List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class ProductoCreate(BaseModel):
     nombre: str
@@ -22,7 +22,7 @@ class ProductoOut(BaseModel):
     nombre: str
     precio: float
     descripcion: Optional[str] = None
-    tags : List[str] = []
+    tags : list[str] = Field(default_factory=list)
     disponible: bool = True
     cityId: Optional[int] = None
     

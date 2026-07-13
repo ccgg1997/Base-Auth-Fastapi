@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, JSON
+from sqlalchemy.ext.mutable import MutableList
 from src.db.base import Base
 
 
@@ -11,7 +11,7 @@ class Producto(Base):
     precio = Column(Float, nullable=False)
     disponible = Column(Boolean, default=True)
     cityId = Column(Integer, ForeignKey("cities.id"), nullable=True)
-    tags = Column(ARRAY(String), nullable=True)  # Almacena los tags como una lista
+    tags = Column(MutableList.as_mutable(JSON), nullable=False, default=list)  # Almacena los tags como una lista
     descripcion = Column(String, nullable=True)   
     
 

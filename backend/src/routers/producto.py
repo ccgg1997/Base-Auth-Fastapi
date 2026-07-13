@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.models.product import Producto
-from src.schemas.product import ProductoCreate, ProductoOut
+from src.dtos.product import ProductoCreate, ProductoOut
 from fastapi import Body
 
 
@@ -18,18 +18,23 @@ def crear_producto(data: ProductoCreate, db: Session = Depends(get_db)):
         .filter(Producto.nombre == data.nombre)
         .first()
     )
+    print(f'{"*"*20}Existing product : {existing_product}')
     if existing_product is not None:
         raise HTTPException(status_code=400, detail="El nombre de producto ya existe")
 
+    # return existing_product
     producto = Producto(**data.model_dump())
+    print(f'{"$"*20}Product : {producto.nombre}, {data.model_dump()}')
+    
     db.add(producto)
     try:
         db.commit()
     except Exception as exc:
+        print(f'{"!"*20}Error: {exc}')
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="El nombre de producto ya existe",
+            detail= exc.args[0] if isinstance(exc, IntegrityError) else "Error al crear el producto",
         ) 
     db.refresh(producto)
     return producto

@@ -1,6 +1,18 @@
 fastapi
+
+#server
 uvicorn[standard]
 psycopg2-binary
+
+#databaseor
 SQLAlchemy
+
+#tipado
 pydantic-settings
+
+#auth
+python-multipart
+pyjwt
+pwdlib[argon2]
+
     
