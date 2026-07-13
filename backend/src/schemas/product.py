@@ -9,6 +9,14 @@ class ProductoCreate(BaseModel):
     descripcion: Optional[str] = None
     cityId: Optional[int] = None
 
+class City(BaseModel):
+    id: int
+    name: str
+    country: str
+
+    class Config:
+        from_attributes = True
+
 class ProductoOut(BaseModel):
     id: int
     nombre: str

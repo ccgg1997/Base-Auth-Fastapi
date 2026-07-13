@@ -32,6 +32,8 @@ services:
     restart: always
     ports:
       - "3000:4000"
+    environment:
+      - database_url=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@bd/${POSTGRES_DB}
     depends_on:
       - bd
     volumes:
