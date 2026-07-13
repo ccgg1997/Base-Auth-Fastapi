@@ -1,0 +1,41 @@
+
+services:
+  bd:
+    container_name: bd
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER:  ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: fsdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+  
+  bdcli:
+    container_name: bdcli
+    image: dpage/pgadmin4:8
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - bd
+  
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: backend.Dockerfile
+    restart: always
+    ports:
+      - "3000:4000"
+    depends_on:
+      - bd
+    volumes:
+      - ./backend:/app
+
+volumes:
+  pgdata: {}
