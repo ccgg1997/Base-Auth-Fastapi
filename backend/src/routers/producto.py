@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.models.product import Producto
 from src.schemas.product import ProductoCreate, ProductoOut
+from fastapi import Body
+
 
 
 router = APIRouter(prefix="/v2", tags=["productos"])
@@ -10,13 +13,58 @@ router = APIRouter(prefix="/v2", tags=["productos"])
 
 @router.post("/", response_model=ProductoOut)
 def crear_producto(data: ProductoCreate, db: Session = Depends(get_db)):
-    producto = Producto(**data.model_dump())
-    
-    existing_product = db.get(Producto, producto.id)
+    existing_product = (
+        db.query(Producto)
+        .filter(Producto.nombre == data.nombre)
+        .first()
+    )
     if existing_product is not None:
         raise HTTPException(status_code=400, detail="El nombre de producto ya existe")
-    
+
+    producto = Producto(**data.model_dump())
     db.add(producto)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="El nombre de producto ya existe",
+        ) 
     db.refresh(producto)
+    return producto
+
+
+@router.delete("/", response_model=str)
+def eliminar_producto(productName: str = Body(embed = True), db: Session = Depends(get_db)):
+    existing_product = (
+        db.query(Producto)
+        .filter(Producto.nombre == productName)
+        .first()
+    )
+    if existing_product is None:
+        raise HTTPException(status_code=400, detail="El nombre de producto ya existe")
+
+    try:
+        existing_product.disponible = False
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="El nombre de producto ya existe",
+        ) 
+    db.refresh(existing_product)
+    return "Producto eliminado exitosamente"
+
+@router.get("/", response_model=list[ProductoOut])
+def listar_productos(db: Session = Depends(get_db)):
+    productos = db.query(Producto).filter(Producto.disponible == True).all()
+    return productos
+
+@router.get("/{product_id}", response_model=ProductoOut)
+def obtener_producto(product_id: int, db: Session = Depends(get_db)):
+    producto = db.query(Producto).filter(Producto.id == product_id, Producto.disponible == True).first()
+    if producto is None:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
     return producto
