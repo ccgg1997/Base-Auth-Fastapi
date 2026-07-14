@@ -6,7 +6,15 @@ from src.db.base import Base
 from src.db.seed import cargar_datos_demo
 from src.db.session import engine
 from src.core.config import settings
-from src.routers import auth, pacientes, producto, registros_login, roles, usuarios
+from src.routers import (
+    auth,
+    dashboard,
+    pacientes,
+    producto,
+    registros_login,
+    roles,
+    usuarios,
+)
 from src.models import login_record, patient, product, role, user
 
 Base.metadata.create_all(bind=engine)
@@ -40,6 +48,7 @@ app.include_router(pacientes.router)
 app.include_router(roles.router)
 app.include_router(usuarios.router)
 app.include_router(registros_login.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/", response_class=HTMLResponse)
