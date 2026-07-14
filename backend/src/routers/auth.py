@@ -11,7 +11,6 @@ from src.core.config import settings
 
 from src.dtos.auth import Token
 from src.dtos.user import UserCreate, UserOut
-from fastapi import Body
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])

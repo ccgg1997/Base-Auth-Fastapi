@@ -12,17 +12,28 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "http://192.168.56.1:3001",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+    ],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
-# engancha routers
+# enlazar routers
 app.include_router(auth.router)
 app.include_router(producto.router)
+
 
 @app.get("/", response_class=HTMLResponse)
 def hello_world():
     return "<p>API RUNNING</p>"
-
