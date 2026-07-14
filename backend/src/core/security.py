@@ -7,8 +7,6 @@ from src.core.config import settings
 
 password_hash = PasswordHash.recommended()
 
-DUMMY_JWT_SECRET = password_hash.hash("your_secret_key") 
-
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
