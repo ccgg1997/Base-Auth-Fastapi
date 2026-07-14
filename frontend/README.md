@@ -13,6 +13,8 @@ npm run dev
 
 La aplicación queda disponible en `http://localhost:3001`, puerto autorizado por el CORS del backend.
 
+`npm run dev` limpia primero la caché regenerable de `.next` para evitar manifiestos de componentes desactualizados entre compilaciones de producción y desarrollo.
+
 Para apuntar a otra API, define:
 
 ```bash
@@ -32,3 +34,5 @@ Estos usuarios solo se crean cuando el backend arranca con `SEED_DEMO_DATA=true`
 npm run lint
 npm run build
 ```
+
+Si un proceso de desarrollo anterior quedó abierto, ciérralo antes de ejecutar nuevamente `npm run dev`.

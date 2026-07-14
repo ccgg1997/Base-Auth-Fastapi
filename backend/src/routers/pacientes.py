@@ -1,7 +1,7 @@
 import csv
 from io import StringIO
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -61,27 +61,81 @@ def _datos_paciente_csv(
     return datos
 
 
-@router.post(
-    "/importar-csv",
-    response_model=PacientesCSVResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-def importar_pacientes_csv(
-    archivo: UploadFile = File(...),
-    db: Session = Depends(get_db),
-):
-    """Importa las filas válidas de un CSV delimitado por comas."""
-    if not archivo.filename or not archivo.filename.lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="El archivo debe tener extensión .csv")
+async def _leer_csv_request(request: Request) -> str:
+    content_type = request.headers.get("content-type", "").lower()
+
+    if content_type.startswith("multipart/form-data"):
+        formulario = await request.form()
+        archivo = formulario.get("archivo")
+        if archivo is None or not hasattr(archivo, "read"):
+            raise HTTPException(
+                status_code=400,
+                detail="El formulario debe incluir un archivo en el campo 'archivo'",
+            )
+        if not archivo.filename or not archivo.filename.lower().endswith(".csv"):
+            raise HTTPException(
+                status_code=400, detail="El archivo debe tener extensión .csv"
+            )
+        contenido_binario = await archivo.read()
+    elif content_type.split(";", 1)[0] in {
+        "text/csv",
+        "application/csv",
+        "application/octet-stream",
+        "application/vnd.ms-excel",
+    }:
+        contenido_binario = await request.body()
+    else:
+        raise HTTPException(
+            status_code=415,
+            detail="Use text/csv para cuerpo binario o multipart/form-data",
+        )
+
+    if not contenido_binario:
+        raise HTTPException(status_code=400, detail="El archivo CSV está vacío")
 
     try:
-        contenido = archivo.file.read().decode("utf-8-sig")
+        return contenido_binario.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise HTTPException(
             status_code=400, detail="El archivo CSV debe estar codificado en UTF-8"
         ) from exc
 
-    lector = csv.DictReader(StringIO(contenido, newline=""), delimiter=",", strict=True)
+
+@router.post(
+    "/importar-csv",
+    response_model=PacientesCSVResponse,
+    status_code=status.HTTP_201_CREATED,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "text/csv": {
+                    "schema": {"type": "string", "format": "binary"},
+                },
+                "multipart/form-data": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["archivo"],
+                        "properties": {
+                            "archivo": {"type": "string", "format": "binary"},
+                        },
+                    },
+                },
+            },
+        },
+    },
+)
+async def importar_pacientes_csv(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Importa las filas válidas de un CSV sin detenerse por filas erróneas."""
+    contenido = await _leer_csv_request(request)
+    primera_linea = contenido.splitlines()[0]
+    delimitador = ";" if ";" in primera_linea and "," not in primera_linea else ","
+    lector = csv.DictReader(
+        StringIO(contenido, newline=""), delimiter=delimitador, strict=True
+    )
     try:
         encabezados = lector.fieldnames
     except csv.Error as exc:
@@ -106,7 +160,7 @@ def importar_pacientes_csv(
             status_code=400,
             detail=(
                 "Faltan columnas obligatorias: "
-                f"{', '.join(faltantes)}. El separador debe ser una coma."
+                f"{', '.join(faltantes)}. Use coma o punto y coma como separador."
             ),
         )
 

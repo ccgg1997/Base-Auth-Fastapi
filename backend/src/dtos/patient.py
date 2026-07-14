@@ -1,10 +1,18 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 EstadoPaciente = Literal["Pendiente", "En atención", "Atendido"]
+CorreoPaciente = Annotated[
+    str,
+    Field(
+        min_length=3,
+        max_length=254,
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+    ),
+]
 
 
 class PacienteCreate(BaseModel):
@@ -14,7 +22,7 @@ class PacienteCreate(BaseModel):
     fecha_nacimiento: date
     genero: str = Field(min_length=1, max_length=30)
     telefono: str | None = Field(default=None, max_length=30)
-    correo: EmailStr | None = None
+    correo: CorreoPaciente | None = None
     eps_codigo: str | None = Field(default=None, max_length=50)
     eps_nombre: str | None = Field(default=None, max_length=150)
     ciudad: str | None = Field(default=None, max_length=100)
@@ -30,7 +38,7 @@ class PacienteUpdate(BaseModel):
     fecha_nacimiento: date | None = None
     genero: str | None = Field(default=None, min_length=1, max_length=30)
     telefono: str | None = Field(default=None, max_length=30)
-    correo: EmailStr | None = None
+    correo: CorreoPaciente | None = None
     eps_codigo: str | None = Field(default=None, max_length=50)
     eps_nombre: str | None = Field(default=None, max_length=150)
     ciudad: str | None = Field(default=None, max_length=100)
@@ -72,7 +80,7 @@ class PacienteResponse(BaseModel):
     fecha_nacimiento: date
     genero: str
     telefono: str | None
-    correo: EmailStr | None
+    correo: CorreoPaciente | None
     eps_codigo: str | None
     eps_nombre: str | None
     ciudad: str | None
