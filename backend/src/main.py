@@ -3,11 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from src.db.base import Base
+from src.db.seed import cargar_datos_demo
 from src.db.session import engine
-from src.routers import producto, auth
+from src.core.config import settings
+from src.routers import auth, pacientes, producto, registros_login, roles, usuarios
 from src.models import login_record, patient, product, role, user
 
 Base.metadata.create_all(bind=engine)
+if settings.seed_demo_data:
+    cargar_datos_demo()
 app = FastAPI()
 
 app.add_middleware(
@@ -32,6 +36,10 @@ app.add_middleware(
 # enlazar routers
 app.include_router(auth.router)
 app.include_router(producto.router)
+app.include_router(pacientes.router)
+app.include_router(roles.router)
+app.include_router(usuarios.router)
+app.include_router(registros_login.router)
 
 
 @app.get("/", response_class=HTMLResponse)

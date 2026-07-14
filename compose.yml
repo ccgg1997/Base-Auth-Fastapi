@@ -42,6 +42,7 @@ services:
     environment:
       - database_url=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@bd/${POSTGRES_DB}
       - jwt_secret_key=${JWT_SECRET_KEY}
+      - seed_demo_data=${SEED_DEMO_DATA:-true}
     depends_on:
       bd:
           condition: service_healthy
