@@ -10,12 +10,11 @@ from src.routers import (
     auth,
     dashboard,
     pacientes,
-    producto,
     registros_login,
     roles,
     usuarios,
 )
-from src.models import login_record, patient, product, role, user
+from src.models import login_record, patient, role, user
 
 Base.metadata.create_all(bind=engine)
 if settings.seed_demo_data:
@@ -44,7 +43,6 @@ app.add_middleware(
 
 # enlazar routers
 app.include_router(auth.router)
-app.include_router(producto.router)
 app.include_router(pacientes.router)
 app.include_router(roles.router)
 app.include_router(usuarios.router)
