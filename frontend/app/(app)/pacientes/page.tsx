@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Icon } from "@/components/icons";
 import { Button, Card, Input, Select, StatusBadge } from "@/components/ui";
 import { api, getApiError } from "@/lib/api";
@@ -35,8 +35,6 @@ const emptyForm: FormState = {
   prioridad: "",
   estado: "Pendiente",
 };
-
-const PAGE_SIZE = 7;
 
 function patientToForm(patient: Patient): FormState {
   return {
@@ -173,47 +171,54 @@ export default function PatientsPage() {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const [drawer, setDrawer] = useState<{ patient: Patient | null; readOnly: boolean } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Patient | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const loadPatients = useCallback(async () => {
+  const loadPatients = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError("");
     try {
-      const { data } = await api.get<Patient[]>("/pacientes/", { params: { limit: 500 } });
+      const params: Record<string, string | number> = {
+        skip: (page - 1) * pageSize,
+        limit: pageSize,
+      };
+      if (query.trim()) params.search = query.trim();
+      if (status) params.estado = status;
+      if (priority) params.prioridad = priority;
+
+      const response = await api.get<Patient[]>("/pacientes/", { params, signal });
+      const responseTotal = Number(response.headers["x-total-count"] ?? response.data.length);
+      const lastPage = Math.max(1, Math.ceil(responseTotal / pageSize));
+
+      setTotal(responseTotal);
+      if (page > lastPage) {
+        setPage(lastPage);
+        return;
+      }
+      const { data } = response;
       setPatients(data);
     } catch (requestError) {
-      setError(getApiError(requestError, "No fue posible cargar los pacientes."));
+      if (!signal?.aborted) setError(getApiError(requestError, "No fue posible cargar los pacientes."));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  }, []);
+  }, [page, pageSize, priority, query, status]);
 
   useEffect(() => {
     const controller = new AbortController();
-    api.get<Patient[]>("/pacientes/", { params: { limit: 500 }, signal: controller.signal })
-      .then(({ data }) => setPatients(data))
-      .catch((requestError) => {
-        if (!controller.signal.aborted) setError(getApiError(requestError, "No fue posible cargar los pacientes."));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
-  }, []);
+    const timeout = window.setTimeout(() => void loadPatients(controller.signal), query.trim() ? 300 : 0);
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [loadPatients, query]);
 
-  const filtered = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase("es");
-    return patients.filter((patient) => {
-      const matchesTerm = !term || `${patient.nombre_completo} ${patient.documento} ${patient.telefono ?? ""}`.toLocaleLowerCase("es").includes(term);
-      return matchesTerm && (!status || patient.estado === status) && (!priority || patient.prioridad === priority);
-    });
-  }, [patients, priority, query, status]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const firstRecord = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastRecord = total === 0 ? 0 : Math.min((page - 1) * pageSize + patients.length, total);
 
   function clearFilters() {
     setQuery("");
@@ -267,7 +272,7 @@ export default function PatientsPage() {
           <table className="w-full min-w-[1120px] text-left text-xs">
             <thead className="sticky top-0 z-10 bg-muted text-[10px] text-muted-foreground"><tr><th className="px-3 py-2 font-semibold">Nombre completo</th><th className="px-3 py-2 font-semibold">Tipo doc.</th><th className="px-3 py-2 font-semibold">Documento</th><th className="px-3 py-2 font-semibold">Fecha nacimiento</th><th className="px-3 py-2 font-semibold">Género</th><th className="px-3 py-2 font-semibold">Teléfono</th><th className="px-3 py-2 font-semibold">EPS</th><th className="px-3 py-2 font-semibold">Prioridad</th><th className="px-3 py-2 font-semibold">Estado</th><th className="px-3 py-2 font-semibold">Fecha creación</th><th className="px-3 py-2 text-right font-semibold">Acciones</th></tr></thead>
             <tbody className="divide-y">
-              {loading && patients.length === 0 ? Array.from({ length: 7 }, (_, index) => <tr key={index} className="animate-pulse">{Array.from({ length: 11 }, (__, cell) => <td key={cell} className="px-3 py-3"><div className="h-3 rounded bg-muted" /></td>)}</tr>) : visible.map((patient) => (
+              {loading && patients.length === 0 ? Array.from({ length: Math.min(pageSize, 10) }, (_, index) => <tr key={index} className="animate-pulse">{Array.from({ length: 11 }, (__, cell) => <td key={cell} className="px-3 py-3"><div className="h-3 rounded bg-muted" /></td>)}</tr>) : patients.map((patient) => (
                 <tr key={patient.paciente_id} className="hover:bg-muted/40">
                   <td className="max-w-44 px-3 py-2 font-semibold">{patient.nombre_completo}</td><td className="px-3 py-2 text-muted-foreground">{patient.tipo_documento}</td><td className="px-3 py-2 text-muted-foreground">{patient.documento}</td><td className="px-3 py-2 text-muted-foreground">{formatDate(patient.fecha_nacimiento)}</td><td className="px-3 py-2 text-muted-foreground">{patient.genero}</td><td className="px-3 py-2 text-muted-foreground">{patient.telefono || "—"}</td><td className="max-w-32 px-3 py-2 text-muted-foreground">{patient.eps_nombre || "—"}</td><td className="px-3 py-2"><StatusBadge value={patient.prioridad} /></td><td className="px-3 py-2"><StatusBadge value={patient.estado} /></td><td className="px-3 py-2 text-[10px] text-muted-foreground">{formatDateTime(patient.fecha_creacion)}</td>
                   <td className="px-3 py-2">
@@ -285,13 +290,26 @@ export default function PatientsPage() {
                   </td>
                 </tr>
               ))}
-              {!loading && visible.length === 0 && <tr><td colSpan={11} className="px-4 py-16 text-center"><Icon name="users" className="mx-auto mb-3 size-9 text-muted-foreground" /><p className="font-semibold">No se encontraron pacientes</p><p className="mt-1 text-sm text-muted-foreground">Prueba con otros criterios de búsqueda.</p></td></tr>}
+              {!loading && patients.length === 0 && <tr><td colSpan={11} className="px-4 py-16 text-center"><Icon name="users" className="mx-auto mb-3 size-9 text-muted-foreground" /><p className="font-semibold">No se encontraron pacientes</p><p className="mt-1 text-sm text-muted-foreground">Prueba con otros criterios de búsqueda.</p></td></tr>}
             </tbody>
           </table>
         </div>
         <footer className="flex shrink-0 flex-col gap-2 border-t px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-muted-foreground">Mostrando <strong className="text-foreground">{filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}</strong> a <strong className="text-foreground">{Math.min(safePage * PAGE_SIZE, filtered.length)}</strong> de <strong className="text-foreground">{filtered.length}</strong> pacientes</p>
-          <div className="flex items-center gap-1.5"><Button variant="outline" size="icon" aria-label="Página anterior" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><Icon name="chevronLeft" className="size-3.5" /></Button><span className="grid size-8 place-items-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">{safePage}</span><span className="text-[10px] text-muted-foreground">de {totalPages}</span><Button variant="outline" size="icon" aria-label="Página siguiente" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}><Icon name="chevronRight" className="size-3.5" /></Button></div>
+          <p className="text-muted-foreground">Mostrando <strong className="text-foreground">{firstRecord}</strong> a <strong className="text-foreground">{lastRecord}</strong> de <strong className="text-foreground">{total}</strong> pacientes</p>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-muted-foreground">
+              Mostrar
+              <span className="relative">
+                <Select aria-label="Registros por página" className="h-8 w-20 pr-7" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }}>
+                  <option value={10}>10</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </Select>
+                <Icon name="chevronDown" className="pointer-events-none absolute right-2 top-2 size-3.5" />
+              </span>
+            </label>
+            <div className="flex items-center gap-1.5"><Button variant="outline" size="icon" aria-label="Página anterior" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><Icon name="chevronLeft" className="size-3.5" /></Button><span className="grid size-8 place-items-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">{page}</span><span className="text-[10px] text-muted-foreground">de {totalPages}</span><Button variant="outline" size="icon" aria-label="Página siguiente" disabled={page >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}><Icon name="chevronRight" className="size-3.5" /></Button></div>
+          </div>
         </footer>
       </Card>
 

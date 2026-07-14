@@ -1,8 +1,9 @@
 import csv
 from io import StringIO
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import ValidationError
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -225,14 +226,34 @@ def crear_paciente(data: PacienteCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[PacienteResponse])
 def listar_pacientes(
+    response: Response,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
+    search: str | None = Query(default=None, max_length=200),
+    estado: str | None = Query(default=None, max_length=30),
+    prioridad: str | None = Query(default=None, max_length=30),
     db: Session = Depends(get_db),
 ):
     query = db.query(Paciente).filter(Paciente.active.is_(True))
+
+    if search and (term := search.strip()):
+        patron = f"%{term}%"
+        query = query.filter(
+            or_(
+                Paciente.nombre_completo.ilike(patron),
+                Paciente.documento.ilike(patron),
+                Paciente.telefono.ilike(patron),
+            )
+        )
+    if estado:
+        query = query.filter(Paciente.estado == estado)
+    if prioridad:
+        query = query.filter(Paciente.prioridad == prioridad)
+
+    response.headers["X-Total-Count"] = str(query.count())
     return (
         query
-        .order_by(Paciente.nombre_completo)
+        .order_by(Paciente.nombre_completo, Paciente.paciente_id)
         .offset(skip)
         .limit(limit)
         .all()

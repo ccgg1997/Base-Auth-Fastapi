@@ -39,6 +39,7 @@ app.add_middleware(
         "OPTIONS",
     ],
     allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["X-Total-Count"],
 )
 
 # enlazar routers
