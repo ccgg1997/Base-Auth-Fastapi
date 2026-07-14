@@ -2,6 +2,25 @@
 
 Interfaz Next.js para autenticación, dashboard y gestión de pacientes.
 
+## Docker Compose
+
+Desde la raíz del repositorio, el frontend se construye y levanta junto con los
+demás servicios:
+
+```bash
+docker compose up -d
+```
+
+La aplicación queda disponible en `http://localhost:3001`. Compose espera a que
+el backend esté saludable antes de iniciar el frontend.
+
+`NEXT_PUBLIC_API_URL` se incorpora al bundle durante el build. Para usar una URL
+distinta, defínela en el `.env` de la raíz y reconstruye el servicio:
+
+```bash
+docker compose up --build -d frontend
+```
+
 ## Desarrollo
 
 Con el backend disponible en `http://localhost:3000`:

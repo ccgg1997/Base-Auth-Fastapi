@@ -12,3 +12,7 @@ JWT_SECRET_KEY=replace-with-a-long-random-secret
 
 # Crea roles y usuarios de demostración al iniciar el backend.
 SEED_DEMO_DATA=true
+
+# URL pública que el navegador usa para consumir la API.
+# Si cambia, reconstruye el frontend para incorporarla al bundle.
+NEXT_PUBLIC_API_URL=http://localhost:3000
