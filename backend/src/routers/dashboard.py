@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.dependencies.auth import get_current_user
 from src.dtos.dashboard import DashboardResponse
+from src.dtos.patient import EstadoPaciente
 from src.models.patient import Paciente
 
 
@@ -17,7 +18,7 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 
-ESTADOS = ("Pendiente", "En atención", "Atendido", "Cancelado", "Inactivo")
+ESTADOS = ("Pendiente", "En atención", "Atendido")
 PRIORIDADES = ("Alta", "Media", "Baja")
 
 
@@ -43,6 +44,7 @@ def _query_periodo(
 ):
     inicio, fin = _limites_periodo(fecha_desde, fecha_hasta, zona)
     query = db.query(Paciente).filter(
+        Paciente.active.is_(True),
         Paciente.fecha_creacion >= inicio,
         Paciente.fecha_creacion < fin,
     )
@@ -101,7 +103,7 @@ def _opciones_filtros(db: Session):
         return [
             valor
             for (valor,) in db.query(columna)
-            .filter(columna.is_not(None))
+            .filter(Paciente.active.is_(True), columna.is_not(None))
             .distinct()
             .order_by(columna)
             .all()
@@ -109,7 +111,11 @@ def _opciones_filtros(db: Session):
 
     eps = (
         db.query(Paciente.eps_codigo, Paciente.eps_nombre)
-        .filter(Paciente.eps_codigo.is_not(None), Paciente.eps_nombre.is_not(None))
+        .filter(
+            Paciente.active.is_(True),
+            Paciente.eps_codigo.is_not(None),
+            Paciente.eps_nombre.is_not(None),
+        )
         .distinct()
         .order_by(Paciente.eps_nombre)
         .all()
@@ -130,7 +136,7 @@ def obtener_dashboard(
     timezone_nombre: str = Query(default="America/Bogota", alias="timezone"),
     ciudad: str | None = None,
     eps_codigo: str | None = None,
-    estado: str | None = None,
+    estado: EstadoPaciente | None = None,
     prioridad: str | None = None,
     genero: str | None = None,
     db: Session = Depends(get_db),
