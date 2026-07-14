@@ -83,7 +83,7 @@ function formatDateTime(value: string) {
 
 function FormField({ label, required, hint, children, className = "" }: { label: string; required?: boolean; hint?: string; children: React.ReactNode; className?: string }) {
   return (
-    <label className={`block space-y-1.5 ${className}`}>
+    <label className={`block space-y-1 ${className}`}>
       <span className="text-xs font-semibold">{label}{required && <span className="ml-0.5 text-destructive">*</span>}</span>
       {children}
       {hint && <span className="block text-[11px] text-muted-foreground">{hint}</span>}
@@ -122,15 +122,15 @@ function PatientDrawer({ patient, readOnly, onClose, onSaved }: { patient: Patie
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-foreground/25 backdrop-blur-[1px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section role="dialog" aria-modal="true" aria-labelledby="patient-drawer-title" className="flex h-full w-full max-w-xl animate-fade-in flex-col bg-card shadow-2xl">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b px-5 sm:px-6">
+        <header className="flex h-13 shrink-0 items-center justify-between border-b px-4">
           <div><h2 id="patient-drawer-title" className="text-lg font-bold">{title}</h2>{patient && <p className="text-xs text-muted-foreground">ID #{patient.paciente_id}</p>}</div>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar"><span aria-hidden="true" className="text-2xl font-light leading-none">×</span></Button>
         </header>
 
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-          <div className="scrollbar-thin flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
+          <div className="scrollbar-thin flex-1 space-y-3 overflow-y-auto p-4">
             {error && <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive-soft p-3 text-sm text-destructive">{error}</p>}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <FormField label="Nombre completo" required className="sm:col-span-2"><Input disabled={readOnly} required minLength={1} maxLength={200} value={form.nombre_completo} onChange={(event) => change("nombre_completo", event.target.value)} placeholder="Ingrese el nombre completo" /></FormField>
               <FormField label="Tipo de documento" required>
                 <div className="relative"><Select disabled={readOnly} required value={form.tipo_documento} onChange={(event) => change("tipo_documento", event.target.value)}><option value="">Seleccione…</option><option value="CC">Cédula de ciudadanía</option><option value="TI">Tarjeta de identidad</option><option value="CE">Cédula de extranjería</option><option value="RC">Registro civil</option><option value="PAS">Pasaporte</option></Select><Icon name="chevronDown" className="pointer-events-none absolute right-3 top-3 size-4 text-muted-foreground" /></div>
@@ -143,7 +143,7 @@ function PatientDrawer({ patient, readOnly, onClose, onSaved }: { patient: Patie
               <FormField label="Teléfono"><Input disabled={readOnly} type="tel" maxLength={30} value={form.telefono} onChange={(event) => change("telefono", event.target.value)} placeholder="Número de teléfono" /></FormField>
               <FormField label="Correo electrónico"><Input disabled={readOnly} type="email" value={form.correo} onChange={(event) => change("correo", event.target.value)} placeholder="correo@ejemplo.com" /></FormField>
               <FormField label="EPS" className="sm:col-span-2">
-                <div className="grid gap-3 sm:grid-cols-[0.7fr_1.3fr]"><Input disabled={readOnly} maxLength={50} value={form.eps_codigo} onChange={(event) => change("eps_codigo", event.target.value)} placeholder="Código" /><Input disabled={readOnly} maxLength={150} value={form.eps_nombre} onChange={(event) => change("eps_nombre", event.target.value)} placeholder="Nombre de la EPS" /></div>
+                <div className="grid gap-2 sm:grid-cols-[0.7fr_1.3fr]"><Input disabled={readOnly} maxLength={50} value={form.eps_codigo} onChange={(event) => change("eps_codigo", event.target.value)} placeholder="Código" /><Input disabled={readOnly} maxLength={150} value={form.eps_nombre} onChange={(event) => change("eps_nombre", event.target.value)} placeholder="Nombre de la EPS" /></div>
               </FormField>
               <FormField label="Ciudad"><Input disabled={readOnly} maxLength={100} value={form.ciudad} onChange={(event) => change("ciudad", event.target.value)} placeholder="Ciudad" /></FormField>
               <FormField label="Prioridad" required>
@@ -155,7 +155,7 @@ function PatientDrawer({ patient, readOnly, onClose, onSaved }: { patient: Patie
               {patient && <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground sm:col-span-2"><strong className="text-foreground">Fecha de creación:</strong> {formatDateTime(patient.fecha_creacion)}</div>}
             </div>
           </div>
-          <footer className="flex shrink-0 justify-end gap-3 border-t bg-card p-4 sm:px-6">
+          <footer className="flex shrink-0 justify-end gap-2 border-t bg-card p-3 px-4">
             <Button type="button" variant="outline" onClick={onClose}>{readOnly ? "Cerrar" : "Cancelar"}</Button>
             {!readOnly && <Button type="submit" disabled={saving}>{saving ? <span className="size-4 animate-spin rounded-full border-2 border-primary-foreground/40 border-t-primary-foreground" /> : <Icon name="save" className="size-4" />}{saving ? "Guardando…" : "Guardar"}</Button>}
           </footer>
@@ -245,14 +245,14 @@ export default function PatientsPage() {
   const hasFilters = Boolean(query || status || priority);
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-5 p-4 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div><p className="text-sm font-semibold text-primary">ADMINISTRACIÓN</p><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Gestión de pacientes</h1><p className="mt-1 text-sm text-muted-foreground">Consulta, registra y actualiza la información de los pacientes.</p></div>
+    <div className="scrollbar-thin mx-auto flex h-full w-full max-w-[1600px] flex-col gap-2.5 overflow-y-auto p-3 lg:overflow-hidden">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div><p className="text-[10px] font-semibold text-primary">ADMINISTRACIÓN</p><h1 className="text-xl font-bold tracking-tight lg:text-2xl">Gestión de pacientes</h1><p className="hidden text-xs text-muted-foreground xl:block">Consulta, registra y actualiza la información de los pacientes.</p></div>
         <Button onClick={() => setDrawer({ patient: null, readOnly: false })}><Icon name="plus" className="size-4" /> Nuevo paciente</Button>
       </div>
 
-      <Card className="p-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
+      <Card className="shrink-0 p-2.5">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_auto]">
           <label className="relative"><span className="sr-only">Buscar paciente</span><Icon name="search" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por nombre, documento o teléfono" className="pl-9" /></label>
           <label className="relative"><span className="sr-only">Filtrar por estado</span><Select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">Todos los estados</option><option value="Pendiente">Pendiente</option><option value="En atención">En atención</option><option value="Atendido">Atendido</option></Select><Icon name="chevronDown" className="pointer-events-none absolute right-3 top-3 size-4 text-muted-foreground" /></label>
           <label className="relative"><span className="sr-only">Filtrar por prioridad</span><Select value={priority} onChange={(event) => { setPriority(event.target.value); setPage(1); }}><option value="">Todas las prioridades</option><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></Select><Icon name="chevronDown" className="pointer-events-none absolute right-3 top-3 size-4 text-muted-foreground" /></label>
@@ -260,26 +260,38 @@ export default function PatientsPage() {
         </div>
       </Card>
 
-      {error && <div role="alert" className="flex items-center justify-between gap-4 rounded-xl border border-destructive/25 bg-destructive-soft p-4 text-sm text-destructive"><span>{error}</span><Button variant="outline" size="sm" onClick={() => void loadPatients()}>Reintentar</Button></div>}
+      {error && <div role="alert" className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-destructive/25 bg-destructive-soft p-2.5 text-xs text-destructive"><span>{error}</span><Button variant="outline" size="sm" onClick={() => void loadPatients()}>Reintentar</Button></div>}
 
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1180px] text-left text-sm">
-            <thead className="bg-muted/70 text-xs text-muted-foreground"><tr><th className="px-4 py-3 font-semibold">Nombre completo</th><th className="px-4 py-3 font-semibold">Tipo doc.</th><th className="px-4 py-3 font-semibold">Documento</th><th className="px-4 py-3 font-semibold">Fecha nacimiento</th><th className="px-4 py-3 font-semibold">Género</th><th className="px-4 py-3 font-semibold">Teléfono</th><th className="px-4 py-3 font-semibold">EPS</th><th className="px-4 py-3 font-semibold">Prioridad</th><th className="px-4 py-3 font-semibold">Estado</th><th className="px-4 py-3 font-semibold">Fecha creación</th><th className="px-4 py-3 text-right font-semibold">Acciones</th></tr></thead>
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="scrollbar-thin min-h-0 flex-1 overflow-auto">
+          <table className="w-full min-w-[1120px] text-left text-xs">
+            <thead className="sticky top-0 z-10 bg-muted text-[10px] text-muted-foreground"><tr><th className="px-3 py-2 font-semibold">Nombre completo</th><th className="px-3 py-2 font-semibold">Tipo doc.</th><th className="px-3 py-2 font-semibold">Documento</th><th className="px-3 py-2 font-semibold">Fecha nacimiento</th><th className="px-3 py-2 font-semibold">Género</th><th className="px-3 py-2 font-semibold">Teléfono</th><th className="px-3 py-2 font-semibold">EPS</th><th className="px-3 py-2 font-semibold">Prioridad</th><th className="px-3 py-2 font-semibold">Estado</th><th className="px-3 py-2 font-semibold">Fecha creación</th><th className="px-3 py-2 text-right font-semibold">Acciones</th></tr></thead>
             <tbody className="divide-y">
-              {loading && patients.length === 0 ? Array.from({ length: 7 }, (_, index) => <tr key={index} className="animate-pulse">{Array.from({ length: 11 }, (__, cell) => <td key={cell} className="px-4 py-4"><div className="h-4 rounded bg-muted" /></td>)}</tr>) : visible.map((patient) => (
+              {loading && patients.length === 0 ? Array.from({ length: 7 }, (_, index) => <tr key={index} className="animate-pulse">{Array.from({ length: 11 }, (__, cell) => <td key={cell} className="px-3 py-3"><div className="h-3 rounded bg-muted" /></td>)}</tr>) : visible.map((patient) => (
                 <tr key={patient.paciente_id} className="hover:bg-muted/40">
-                  <td className="max-w-48 px-4 py-3 font-semibold">{patient.nombre_completo}</td><td className="px-4 py-3 text-muted-foreground">{patient.tipo_documento}</td><td className="px-4 py-3 text-muted-foreground">{patient.documento}</td><td className="px-4 py-3 text-muted-foreground">{formatDate(patient.fecha_nacimiento)}</td><td className="px-4 py-3 text-muted-foreground">{patient.genero}</td><td className="px-4 py-3 text-muted-foreground">{patient.telefono || "—"}</td><td className="max-w-36 px-4 py-3 text-muted-foreground">{patient.eps_nombre || "—"}</td><td className="px-4 py-3"><StatusBadge value={patient.prioridad} /></td><td className="px-4 py-3"><StatusBadge value={patient.estado} /></td><td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(patient.fecha_creacion)}</td>
-                  <td className="px-4 py-3"><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" aria-label={`Ver ${patient.nombre_completo}`} onClick={() => setDrawer({ patient, readOnly: true })}><Icon name="eye" className="size-4 text-primary" /></Button><Button variant="ghost" size="icon" aria-label={`Editar ${patient.nombre_completo}`} onClick={() => setDrawer({ patient, readOnly: false })}><Icon name="pencil" className="size-4 text-primary" /></Button><Button variant="ghost" size="icon" aria-label={`Eliminar ${patient.nombre_completo}`} onClick={() => setDeleteTarget(patient)}><Icon name="trash" className="size-4 text-destructive" /></Button></div></td>
+                  <td className="max-w-44 px-3 py-2 font-semibold">{patient.nombre_completo}</td><td className="px-3 py-2 text-muted-foreground">{patient.tipo_documento}</td><td className="px-3 py-2 text-muted-foreground">{patient.documento}</td><td className="px-3 py-2 text-muted-foreground">{formatDate(patient.fecha_nacimiento)}</td><td className="px-3 py-2 text-muted-foreground">{patient.genero}</td><td className="px-3 py-2 text-muted-foreground">{patient.telefono || "—"}</td><td className="max-w-32 px-3 py-2 text-muted-foreground">{patient.eps_nombre || "—"}</td><td className="px-3 py-2"><StatusBadge value={patient.prioridad} /></td><td className="px-3 py-2"><StatusBadge value={patient.estado} /></td><td className="px-3 py-2 text-[10px] text-muted-foreground">{formatDateTime(patient.fecha_creacion)}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex justify-end gap-1.5">
+                      <Button className="size-9 bg-info-soft text-primary hover:bg-primary hover:text-primary-foreground" variant="ghost" size="icon" title="Ver paciente" aria-label={`Ver ${patient.nombre_completo}`} onClick={() => setDrawer({ patient, readOnly: true })}>
+                        <Icon name="eye" className="size-5" strokeWidth={2.4} />
+                      </Button>
+                      <Button className="size-9 bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground" variant="ghost" size="icon" title="Editar paciente" aria-label={`Editar ${patient.nombre_completo}`} onClick={() => setDrawer({ patient, readOnly: false })}>
+                        <Icon name="pencil" className="size-5" strokeWidth={2.4} />
+                      </Button>
+                      <Button className="size-9 bg-destructive-soft text-destructive hover:bg-destructive hover:text-primary-foreground" variant="ghost" size="icon" title="Eliminar paciente" aria-label={`Eliminar ${patient.nombre_completo}`} onClick={() => setDeleteTarget(patient)}>
+                        <Icon name="trash" className="size-5" strokeWidth={2.4} />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {!loading && visible.length === 0 && <tr><td colSpan={11} className="px-4 py-16 text-center"><Icon name="users" className="mx-auto mb-3 size-9 text-muted-foreground" /><p className="font-semibold">No se encontraron pacientes</p><p className="mt-1 text-sm text-muted-foreground">Prueba con otros criterios de búsqueda.</p></td></tr>}
             </tbody>
           </table>
         </div>
-        <footer className="flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <footer className="flex shrink-0 flex-col gap-2 border-t px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between">
           <p className="text-muted-foreground">Mostrando <strong className="text-foreground">{filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}</strong> a <strong className="text-foreground">{Math.min(safePage * PAGE_SIZE, filtered.length)}</strong> de <strong className="text-foreground">{filtered.length}</strong> pacientes</p>
-          <div className="flex items-center gap-2"><Button variant="outline" size="icon" aria-label="Página anterior" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><Icon name="chevronLeft" className="size-4" /></Button><span className="grid size-9 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">{safePage}</span><span className="text-xs text-muted-foreground">de {totalPages}</span><Button variant="outline" size="icon" aria-label="Página siguiente" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}><Icon name="chevronRight" className="size-4" /></Button></div>
+          <div className="flex items-center gap-1.5"><Button variant="outline" size="icon" aria-label="Página anterior" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><Icon name="chevronLeft" className="size-3.5" /></Button><span className="grid size-8 place-items-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">{safePage}</span><span className="text-[10px] text-muted-foreground">de {totalPages}</span><Button variant="outline" size="icon" aria-label="Página siguiente" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}><Icon name="chevronRight" className="size-3.5" /></Button></div>
         </footer>
       </Card>
 

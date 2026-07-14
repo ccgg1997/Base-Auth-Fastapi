@@ -1,6 +1,8 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  color-scheme: light;
   --background: oklch(0.976 0.006 247);
   --foreground: oklch(0.24 0.04 257);
   --card: oklch(1 0 0);
@@ -27,8 +29,8 @@
   --radius: 0.75rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+.dark {
+    color-scheme: dark;
     --background: oklch(0.19 0.025 257);
     --foreground: oklch(0.94 0.012 250);
     --card: oklch(0.23 0.03 257);
@@ -52,7 +54,6 @@
     --destructive-soft: oklch(0.32 0.07 27);
     --info-soft: oklch(0.3 0.055 252);
     --sidebar: oklch(0.21 0.028 257);
-  }
 }
 
 @theme inline {
@@ -89,11 +90,13 @@
 }
 
 html {
+  height: 100%;
   background: var(--background);
 }
 
 body {
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   background: var(--background);
   color: var(--foreground);
 }

@@ -7,6 +7,7 @@ import { Brand, Icon } from "@/components/icons";
 import { Button, Input } from "@/components/ui";
 import { api } from "@/lib/api";
 import { getToken, saveToken } from "@/lib/auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type TokenResponse = { access_token: string; token_type: string; expires_in: number };
 
@@ -46,10 +47,10 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen bg-card lg:grid-cols-[1.05fr_0.95fr]">
-      <section className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
+    <main className="grid h-dvh overflow-hidden bg-card lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="relative hidden overflow-hidden bg-primary p-10 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
         <div className="absolute -left-24 -top-28 size-80 rounded-full bg-primary-foreground/10" />
-        <div className="absolute -bottom-52 -right-52 size-[32rem] rounded-full border-[5rem] border-primary-foreground/5" />
+        <div className="absolute -bottom-52 -right-52 size-[32rem] rounded-full border-[5rem] border-primary-foreground opacity-10" />
         <div className="relative [&_small]:text-primary-foreground/70"><Brand /></div>
         <div className="relative z-10 max-w-xl space-y-6">
           <span className="grid size-16 place-items-center rounded-2xl bg-primary-foreground/15 backdrop-blur">
@@ -61,7 +62,8 @@ export default function LoginPage() {
         <p className="relative text-sm text-primary-foreground/60">Plataforma segura de gestión clínica</p>
       </section>
 
-      <section className="flex min-h-screen items-center justify-center bg-background px-5 py-10 sm:px-10">
+      <section className="relative flex h-dvh items-center justify-center overflow-y-auto bg-background px-5 py-8 sm:px-10">
+        <ThemeToggle className="absolute right-4 top-4" />
         <div className="w-full max-w-md animate-fade-in">
           <div className="mb-10 lg:hidden"><Brand /></div>
           <div className="mb-8 space-y-2">

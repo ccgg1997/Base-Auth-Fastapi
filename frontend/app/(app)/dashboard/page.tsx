@@ -53,16 +53,16 @@ const metricDefinitions: { metricKey: keyof DashboardData["metricas"]; label: st
 function MetricCard({ metric, label, icon, tone }: { metric: Metric; label: string; icon: IconName; tone: string }) {
   const increased = metric.variacion_porcentual >= 0;
   return (
-    <Card className="p-4">
-      <div className="flex items-start gap-3">
-        <span className={`grid size-10 shrink-0 place-items-center rounded-full ${tone}`}><Icon name={icon} className="size-5" /></span>
+    <Card className="p-2.5">
+      <div className="flex items-start gap-2">
+        <span className={`grid size-8 shrink-0 place-items-center rounded-full ${tone}`}><Icon name={icon} className="size-4" /></span>
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight">{number(metric.valor)}</p>
+          <p className="text-xl font-bold tracking-tight">{number(metric.valor)}</p>
         </div>
       </div>
-      <div className={`mt-3 flex items-center gap-1 text-xs font-semibold ${increased ? "text-success" : "text-destructive"}`}>
-        <Icon name={increased ? "trendUp" : "trendDown"} className="size-3.5" />
+      <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold ${increased ? "text-success" : "text-destructive"}`}>
+        <Icon name={increased ? "trendUp" : "trendDown"} className="size-3" />
         {Math.abs(metric.variacion_porcentual)}%
         <span className="ml-1 font-normal text-muted-foreground">vs. periodo anterior</span>
       </div>
@@ -72,23 +72,23 @@ function MetricCard({ metric, label, icon, tone }: { metric: Metric; label: stri
 
 function FilterSelect({ label, value, values, onChange }: { label: string; value: string; values: { value: string; label: string }[]; onChange: (value: string) => void }) {
   return (
-    <label className="relative block min-w-36 flex-1">
-      <span className="mb-1 block text-xs font-semibold text-muted-foreground">{label}</span>
+    <label className="relative block min-w-0">
+      <span className="mb-0.5 block truncate text-[10px] font-semibold text-muted-foreground">{label}</span>
       <Select value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="">Todos</option>
         {values.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </Select>
-      <Icon name="chevronDown" className="pointer-events-none absolute bottom-3 right-3 size-4 text-muted-foreground" />
+      <Icon name="chevronDown" className="pointer-events-none absolute bottom-2.5 right-2.5 size-3.5 text-muted-foreground" />
     </label>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-36 rounded-xl bg-muted" />)}</div>
-      <div className="grid gap-4 lg:grid-cols-3">{Array.from({ length: 3 }, (_, index) => <div key={index} className="h-72 rounded-xl bg-muted" />)}</div>
-      <div className="h-72 rounded-xl bg-muted" />
+    <div className="flex min-h-0 flex-1 animate-pulse flex-col gap-2.5">
+      <div className="grid gap-2.5 lg:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-20 rounded-lg bg-muted" />)}</div>
+      <div className="grid min-h-0 flex-1 gap-2.5 lg:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <div key={index} className="rounded-lg bg-muted" />)}</div>
+      <div className="min-h-0 flex-1 rounded-lg bg-muted" />
     </div>
   );
 }
@@ -130,8 +130,8 @@ export default function DashboardPage() {
   const latestPatients = useMemo(() => {
     if (!data) return [];
     const term = search.trim().toLocaleLowerCase("es");
-    if (!term) return data.ultimos_pacientes;
-    return data.ultimos_pacientes.filter((patient) => `${patient.nombre_completo} ${patient.documento}`.toLocaleLowerCase("es").includes(term));
+    if (!term) return data.ultimos_pacientes.slice(0, 5);
+    return data.ultimos_pacientes.filter((patient) => `${patient.nombre_completo} ${patient.documento}`.toLocaleLowerCase("es").includes(term)).slice(0, 5);
   }, [data, search]);
 
   const stateMax = Math.max(1, ...(data?.pacientes_por_estado.map((item) => item.cantidad) ?? [1]));
@@ -145,68 +145,68 @@ export default function DashboardPage() {
   const medium = data?.distribucion_prioridad.find((item) => item.prioridad === "Media")?.porcentaje ?? 0;
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-5 p-4 sm:p-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <div className="scrollbar-thin mx-auto flex h-full w-full max-w-[1600px] flex-col gap-2.5 overflow-y-auto p-3 lg:overflow-hidden">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-primary">RESUMEN OPERATIVO</p>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard de pacientes</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Indicadores y prioridades del periodo seleccionado.</p>
+          <p className="text-[10px] font-semibold text-primary">RESUMEN OPERATIVO</p>
+          <h1 className="text-xl font-bold tracking-tight lg:text-2xl">Dashboard de pacientes</h1>
+          <p className="hidden text-xs text-muted-foreground xl:block">Indicadores y prioridades del periodo seleccionado.</p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <label className="text-xs font-semibold text-muted-foreground">Desde<Input type="date" value={from} max={to} onChange={(event) => setFrom(event.target.value)} className="mt-1" /></label>
-          <label className="text-xs font-semibold text-muted-foreground">Hasta<Input type="date" value={to} min={from} onChange={(event) => setTo(event.target.value)} className="mt-1" /></label>
+        <div className="flex gap-2 sm:items-end">
+          <label className="text-[10px] font-semibold text-muted-foreground">Desde<Input type="date" value={from} max={to} onChange={(event) => setFrom(event.target.value)} className="mt-0.5 w-36" /></label>
+          <label className="text-[10px] font-semibold text-muted-foreground">Hasta<Input type="date" value={to} min={from} onChange={(event) => setTo(event.target.value)} className="mt-0.5 w-36" /></label>
         </div>
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-3">
+      <Card className="shrink-0 p-2.5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <FilterSelect label="Ciudad" value={filters.ciudad} values={(data?.opciones_filtros.ciudades ?? []).map((value) => ({ value, label: value }))} onChange={(value) => setFilter("ciudad", value)} />
           <FilterSelect label="EPS" value={filters.eps_codigo} values={(data?.opciones_filtros.eps ?? []).map((value) => ({ value: value.codigo, label: value.nombre }))} onChange={(value) => setFilter("eps_codigo", value)} />
           <FilterSelect label="Estado" value={filters.estado} values={(data?.opciones_filtros.estados ?? []).map((value) => ({ value, label: value }))} onChange={(value) => setFilter("estado", value)} />
           <FilterSelect label="Prioridad" value={filters.prioridad} values={(data?.opciones_filtros.prioridades ?? []).map((value) => ({ value, label: value }))} onChange={(value) => setFilter("prioridad", value)} />
           <FilterSelect label="Género" value={filters.genero} values={(data?.opciones_filtros.generos ?? []).map((value) => ({ value, label: value }))} onChange={(value) => setFilter("genero", value)} />
-          <Button variant="outline" className="mt-auto" onClick={() => setFilters(emptyFilters)} disabled={!Object.values(filters).some(Boolean)}><Icon name="refresh" className="size-4" /> Limpiar</Button>
+          <Button variant="outline" className="mt-auto" onClick={() => setFilters(emptyFilters)} disabled={!Object.values(filters).some(Boolean)}><Icon name="refresh" className="size-3.5" /> Limpiar</Button>
         </div>
       </Card>
 
-      {error && <div role="alert" className="flex items-center justify-between gap-4 rounded-xl border border-destructive/25 bg-destructive-soft p-4 text-sm text-destructive"><span>{error}</span><Button variant="outline" size="sm" onClick={() => setFilters({ ...filters })}>Reintentar</Button></div>}
+      {error && <div role="alert" className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-destructive/25 bg-destructive-soft p-2.5 text-xs text-destructive"><span>{error}</span><Button variant="outline" size="sm" onClick={() => setFilters({ ...filters })}>Reintentar</Button></div>}
 
       {loading && !data ? <DashboardSkeleton /> : data && (
-        <div className="space-y-5 animate-fade-in">
-          <section aria-label="Métricas principales" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-2.5 animate-fade-in">
+          <section aria-label="Métricas principales" className="grid shrink-0 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
             {metricDefinitions.map(({ metricKey, ...definition }) => <MetricCard key={metricKey} {...definition} metric={data.metricas[metricKey]} />)}
           </section>
 
-          <section className="grid gap-4 xl:grid-cols-[1fr_1fr_1.4fr_1.2fr]">
-            <Card className="p-5">
-              <h2 className="font-bold">Pacientes por estado</h2>
-              <div className="mt-6 flex h-44 items-end justify-around gap-3 border-b px-2">
+          <section className="grid gap-2.5 lg:min-h-0 lg:flex-[0.9] lg:grid-cols-[1fr_1fr_1.35fr_1.15fr]">
+            <Card className="flex min-h-0 flex-col p-3">
+              <h2 className="text-sm font-bold">Pacientes por estado</h2>
+              <div className="mt-2 flex min-h-24 flex-1 items-end justify-around gap-2 border-b px-1">
                 {data.pacientes_por_estado.map((item, index) => (
-                  <div key={item.estado} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                    <span className="text-xs font-bold">{number(item.cantidad)}</span>
+                  <div key={item.estado} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
+                    <span className="text-[10px] font-bold">{number(item.cantidad)}</span>
                     <div className={`w-full max-w-12 rounded-t-md ${index === 2 ? "bg-success" : index === 1 ? "bg-primary" : "bg-warning"}`} style={{ height: `${Math.max(4, (item.cantidad / stateMax) * 75)}%` }} />
-                    <span className="h-8 text-center text-[11px] leading-tight text-muted-foreground">{item.estado}</span>
+                    <span className="h-6 text-center text-[9px] leading-tight text-muted-foreground">{item.estado}</span>
                   </div>
                 ))}
               </div>
             </Card>
 
-            <Card className="p-5">
-              <h2 className="font-bold">Distribución por prioridad</h2>
-              <div className="mt-6 flex items-center justify-center gap-6">
-                <div className="relative size-32 shrink-0 rounded-full" style={{ background: `conic-gradient(var(--destructive) 0 ${high}%, var(--warning) ${high}% ${high + medium}%, var(--success) ${high + medium}% 100%)` }}>
-                  <div className="absolute inset-5 grid place-items-center rounded-full bg-card text-center"><span><strong className="block text-xl">{number(data.metricas.pacientes_registrados.valor)}</strong><small className="text-muted-foreground">Total</small></span></div>
+            <Card className="flex min-h-0 flex-col p-3">
+              <h2 className="text-sm font-bold">Distribución por prioridad</h2>
+              <div className="mt-2 flex min-h-0 flex-1 items-center justify-center gap-3">
+                <div className="relative size-24 shrink-0 rounded-full" style={{ background: `conic-gradient(var(--destructive) 0 ${high}%, var(--warning) ${high}% ${high + medium}%, var(--success) ${high + medium}% 100%)` }}>
+                  <div className="absolute inset-4 grid place-items-center rounded-full bg-card text-center"><span><strong className="block text-base">{number(data.metricas.pacientes_registrados.valor)}</strong><small className="text-[10px] text-muted-foreground">Total</small></span></div>
                 </div>
-                <div className="space-y-2 text-xs">
+                <div className="space-y-1 text-[10px]">
                   {data.distribucion_prioridad.map((item) => <div key={item.prioridad} className="flex items-center gap-2"><span className={`size-2 rounded-full ${item.prioridad === "Alta" ? "bg-destructive" : item.prioridad === "Media" ? "bg-warning" : "bg-success"}`} /><span className="text-muted-foreground">{item.prioridad}</span><strong>{item.porcentaje}%</strong></div>)}
                 </div>
               </div>
             </Card>
 
-            <Card className="p-5">
-              <h2 className="font-bold">Registros por día</h2>
-              <div className="mt-5 h-48">
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-36 w-full overflow-visible" role="img" aria-label="Gráfica de registros por día">
+            <Card className="flex min-h-0 flex-col p-3">
+              <h2 className="text-sm font-bold">Registros por día</h2>
+              <div className="mt-2 flex min-h-0 flex-1 flex-col">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="min-h-20 w-full flex-1 overflow-visible" role="img" aria-label="Gráfica de registros por día">
                   {[20, 40, 60, 80].map((y) => <line key={y} x1="5" y1={y} x2="95" y2={y} stroke="var(--border)" strokeWidth="0.5" />)}
                   <polyline points={linePoints} fill="none" stroke="var(--primary)" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
                   {data.registros_por_dia.map((item, index, items) => {
@@ -219,13 +219,13 @@ export default function DashboardPage() {
               </div>
             </Card>
 
-            <Card className="overflow-hidden">
-              <div className="flex items-center justify-between border-b px-5 py-4"><h2 className="font-bold">Atención rápida</h2><Icon name="bell" className="size-5 text-destructive" /></div>
-              <div className="scrollbar-thin max-h-64 space-y-2 overflow-auto p-3">
-                {data.atencion_rapida.length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">No hay alertas en este periodo.</p>}
+            <Card className="flex min-h-0 flex-col overflow-hidden">
+              <div className="flex shrink-0 items-center justify-between border-b px-3 py-2"><h2 className="text-sm font-bold">Atención rápida</h2><Icon name="bell" className="size-4 text-destructive" /></div>
+              <div className="scrollbar-thin min-h-0 flex-1 space-y-1.5 overflow-auto p-2">
+                {data.atencion_rapida.length === 0 && <p className="grid h-full place-items-center text-xs text-muted-foreground">No hay alertas en este periodo.</p>}
                 {data.atencion_rapida.map((patient) => (
-                  <div key={patient.paciente_id} className={`flex items-center gap-3 rounded-lg border p-3 ${patient.prioridad === "Alta" ? "border-destructive/20 bg-destructive-soft" : "border-warning/20 bg-warning-soft"}`}>
-                    <Icon name={patient.prioridad === "Alta" ? "alert" : "clock"} className={`size-5 shrink-0 ${patient.prioridad === "Alta" ? "text-destructive" : "text-warning"}`} />
+                  <div key={patient.paciente_id} className={`flex items-center gap-2 rounded-md border p-2 ${patient.prioridad === "Alta" ? "border-destructive/20 bg-destructive-soft" : "border-warning/20 bg-warning-soft"}`}>
+                    <Icon name={patient.prioridad === "Alta" ? "alert" : "clock"} className={`size-4 shrink-0 ${patient.prioridad === "Alta" ? "text-destructive" : "text-warning"}`} />
                     <div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{patient.nombre_completo}</p><p className="truncate text-[11px] text-muted-foreground">{patient.tipo_documento}: {patient.documento}</p><p className="mt-1 text-[10px] text-muted-foreground">{patient.tiempo_espera_texto}</p></div>
                     <Icon name="chevronRight" className="size-4 text-muted-foreground" />
                   </div>
@@ -234,17 +234,17 @@ export default function DashboardPage() {
             </Card>
           </section>
 
-          <Card className="overflow-hidden">
-            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div><h2 className="font-bold">Últimos pacientes registrados</h2><p className="text-xs text-muted-foreground">Los registros más recientes del periodo.</p></div>
-              <div className="relative w-full sm:max-w-sm"><Icon name="search" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre o documento" className="pl-9" /></div>
+          <Card className="flex min-h-0 flex-col overflow-hidden lg:flex-[1.1]">
+            <div className="flex shrink-0 flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div><h2 className="text-sm font-bold">Últimos pacientes registrados</h2><p className="text-[10px] text-muted-foreground">Los registros más recientes del periodo.</p></div>
+              <div className="relative w-full sm:max-w-xs"><Icon name="search" className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre o documento" className="pl-8" /></div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[850px] text-left text-sm">
-                <thead className="bg-muted/70 text-xs text-muted-foreground"><tr><th className="px-4 py-3 font-semibold">Documento</th><th className="px-4 py-3 font-semibold">Nombre completo</th><th className="px-4 py-3 font-semibold">Ciudad</th><th className="px-4 py-3 font-semibold">EPS</th><th className="px-4 py-3 font-semibold">Prioridad</th><th className="px-4 py-3 font-semibold">Estado</th><th className="px-4 py-3 font-semibold">Fecha creación</th></tr></thead>
+            <div className="scrollbar-thin min-h-0 flex-1 overflow-auto">
+              <table className="w-full min-w-[850px] text-left text-xs">
+                <thead className="sticky top-0 bg-muted text-[10px] text-muted-foreground"><tr><th className="px-3 py-1.5 font-semibold">Documento</th><th className="px-3 py-1.5 font-semibold">Nombre completo</th><th className="px-3 py-1.5 font-semibold">Ciudad</th><th className="px-3 py-1.5 font-semibold">EPS</th><th className="px-3 py-1.5 font-semibold">Prioridad</th><th className="px-3 py-1.5 font-semibold">Estado</th><th className="px-3 py-1.5 font-semibold">Fecha creación</th></tr></thead>
                 <tbody className="divide-y">
-                  {latestPatients.map((patient) => <tr key={patient.paciente_id} className="hover:bg-muted/40"><td className="px-4 py-3 text-muted-foreground">{patient.tipo_documento} {patient.documento}</td><td className="px-4 py-3 font-semibold">{patient.nombre_completo}</td><td className="px-4 py-3 text-muted-foreground">{patient.ciudad || "—"}</td><td className="px-4 py-3 text-muted-foreground">{patient.eps_nombre || "—"}</td><td className="px-4 py-3"><StatusBadge value={patient.prioridad} /></td><td className="px-4 py-3"><StatusBadge value={patient.estado} /></td><td className="px-4 py-3 text-xs text-muted-foreground">{dateTime(patient.fecha_creacion)}</td></tr>)}
-                  {latestPatients.length === 0 && <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">No se encontraron pacientes.</td></tr>}
+                  {latestPatients.map((patient) => <tr key={patient.paciente_id} className="hover:bg-muted/40"><td className="px-3 py-1.5 text-muted-foreground">{patient.tipo_documento} {patient.documento}</td><td className="px-3 py-1.5 font-semibold">{patient.nombre_completo}</td><td className="px-3 py-1.5 text-muted-foreground">{patient.ciudad || "—"}</td><td className="px-3 py-1.5 text-muted-foreground">{patient.eps_nombre || "—"}</td><td className="px-3 py-1.5"><StatusBadge value={patient.prioridad} /></td><td className="px-3 py-1.5"><StatusBadge value={patient.estado} /></td><td className="px-3 py-1.5 text-[10px] text-muted-foreground">{dateTime(patient.fecha_creacion)}</td></tr>)}
+                  {latestPatients.length === 0 && <tr><td colSpan={7} className="px-3 py-5 text-center text-muted-foreground">No se encontraron pacientes.</td></tr>}
                 </tbody>
               </table>
             </div>

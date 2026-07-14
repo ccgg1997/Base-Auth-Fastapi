@@ -23,6 +23,8 @@ export type IconName =
   | "save"
   | "search"
   | "shield"
+  | "moon"
+  | "sun"
   | "trash"
   | "trendDown"
   | "trendUp"
@@ -46,12 +48,14 @@ const paths: Record<IconName, React.ReactNode> = {
   heart: <><path d="M20.8 5.7a5.5 5.5 0 0 0-7.8 0L12 6.8l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 22l8.8-8.5a5.5 5.5 0 0 0 0-7.8Z"/><path d="M8 12h2l1-3 2 6 1-3h2"/></>,
   logout: <><path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></>,
   menu: <path d="M4 7h16M4 12h16M4 17h16"/>,
+  moon: <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.7 8.7 0 1 0 20.5 14.2Z"/>,
   pencil: <><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/><path d="m14 7 3 3"/></>,
   plus: <path d="M12 5v14M5 12h14"/>,
   refresh: <><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M6.1 9A7 7 0 0 1 18 6l2 5M4 13l2 5a7 7 0 0 0 11.9-3"/></>,
   save: <><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></>,
   search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>,
   shield: <><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="M9 12h6M12 9v6"/></>,
+  sun: <><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></>,
   trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></>,
   trendDown: <path d="m4 8 6 6 4-4 6 6M20 11v5h-5"/>,
   trendUp: <path d="m4 16 6-6 4 4 6-6M15 8h5v5"/>,
@@ -70,13 +74,13 @@ export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGEle
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-        <Icon name="heart" className="size-6" />
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+        <Icon name="heart" className="size-5" />
       </span>
       {!compact && (
         <span className="leading-tight">
-          <strong className="block text-lg font-bold tracking-tight">SaludPlus</strong>
-          <small className="text-xs text-muted-foreground">Gestión de pacientes</small>
+          <strong className="block text-base font-bold tracking-tight">SaludPlus</strong>
+          <small className="text-[11px] text-muted-foreground">Gestión de pacientes</small>
         </span>
       )}
     </div>
