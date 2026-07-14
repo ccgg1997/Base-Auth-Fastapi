@@ -1,6 +1,6 @@
 # Estructura FastAPI + SQLAlchemy + PostgreSQL + JWT
 
-Esta guía explica qué debe ir en cada archivo del backend, por qué se separa y cuál es su código base.
+Guía explica qué debe ir en cada archivo del backend, por qué se separa y cuál es su código base.
 
 ## 1. Árbol del proyecto
 
