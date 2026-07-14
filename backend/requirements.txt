@@ -9,10 +9,13 @@ SQLAlchemy
 
 #tipado
 pydantic-settings
+pydantic[email]
 
 #auth
 python-multipart
 pyjwt
 pwdlib[argon2]
+
+
 
     

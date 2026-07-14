@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.models.user import User
 from src.dependencies.auth import get_current_user
+from src.core.security import hash_password, verify_password, create_access_token
 
 from src.dtos.auth import Token
 from src.dtos.user import UserCreate, UserOut
@@ -20,7 +21,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
 
-    new_user = User(**user.model_dump())
+    new_user = User(username=user.username, hashed_password=hash_password(user.password))
     db.add(new_user)
     try:
         db.commit()
@@ -39,10 +40,10 @@ def login(
     db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not user.verify_password(form_data.password):
+    if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Nombre de usuario o contraseña incorrectos")
 
-    access_token = user.create_access_token()
+    access_token = create_access_token(form_data.username)
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserOut)
