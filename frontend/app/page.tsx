@@ -49,9 +49,9 @@ export default function LoginPage() {
     <main className="grid min-h-screen bg-card lg:grid-cols-[1.05fr_0.95fr]">
       <section className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
         <div className="absolute -left-24 -top-28 size-80 rounded-full bg-primary-foreground/10" />
-        <div className="absolute -bottom-40 -right-24 size-[32rem] rounded-full border-[5rem] border-primary-foreground/10" />
+        <div className="absolute -bottom-52 -right-52 size-[32rem] rounded-full border-[5rem] border-primary-foreground/5" />
         <div className="relative [&_small]:text-primary-foreground/70"><Brand /></div>
-        <div className="relative max-w-xl space-y-6">
+        <div className="relative z-10 max-w-xl space-y-6">
           <span className="grid size-16 place-items-center rounded-2xl bg-primary-foreground/15 backdrop-blur">
             <Icon name="heart" className="size-9" />
           </span>

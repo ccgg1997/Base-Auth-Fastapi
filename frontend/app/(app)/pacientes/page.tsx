@@ -124,7 +124,7 @@ function PatientDrawer({ patient, readOnly, onClose, onSaved }: { patient: Patie
       <section role="dialog" aria-modal="true" aria-labelledby="patient-drawer-title" className="flex h-full w-full max-w-xl animate-fade-in flex-col bg-card shadow-2xl">
         <header className="flex h-16 shrink-0 items-center justify-between border-b px-5 sm:px-6">
           <div><h2 id="patient-drawer-title" className="text-lg font-bold">{title}</h2>{patient && <p className="text-xs text-muted-foreground">ID #{patient.paciente_id}</p>}</div>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar"><Icon name="close" className="size-5" /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar"><span aria-hidden="true" className="text-2xl font-light leading-none">×</span></Button>
         </header>
 
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
