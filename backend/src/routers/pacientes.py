@@ -1,10 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.exc import IntegrityError
+import csv
+from io import StringIO
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
 from src.dependencies.auth import get_current_user
-from src.dtos.patient import PacienteCreate, PacienteResponse, PacienteUpdate
+from src.dtos.patient import (
+    PacienteCreate,
+    PacienteResponse,
+    PacientesCSVResponse,
+    PacienteUpdate,
+)
 from src.models.patient import Paciente
 
 
@@ -13,6 +22,133 @@ router = APIRouter(
     tags=["pacientes"],
     dependencies=[Depends(get_current_user)],
 )
+
+
+def _id_fila_csv(fila: dict[str | None, str | list[str] | None], numero: int) -> int:
+    """Obtiene el identificador del origen o usa el número de registro."""
+    valor = fila.get("paciente_id")
+    if valor in (None, ""):
+        valor = fila.get("id")
+    try:
+        return int(str(valor).strip())
+    except (TypeError, ValueError):
+        return numero
+
+
+def _datos_paciente_csv(
+    fila: dict[str | None, str | list[str] | None],
+) -> dict[str, str | None]:
+    if None in fila:
+        raise ValueError("La fila contiene más columnas que el encabezado")
+
+    datos: dict[str, str | None] = {}
+    for campo, definicion in PacienteCreate.model_fields.items():
+        if campo not in fila:
+            continue
+
+        valor = fila[campo]
+        if not isinstance(valor, str):
+            datos[campo] = None
+            continue
+
+        valor = valor.strip()
+        if valor == "" and not definicion.is_required():
+            # Un valor opcional vacío equivale a null; active conserva su default.
+            if campo != "active":
+                datos[campo] = None
+            continue
+        datos[campo] = valor
+    return datos
+
+
+@router.post(
+    "/importar-csv",
+    response_model=PacientesCSVResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def importar_pacientes_csv(
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    """Importa las filas válidas de un CSV delimitado por comas."""
+    if not archivo.filename or not archivo.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="El archivo debe tener extensión .csv")
+
+    try:
+        contenido = archivo.file.read().decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(
+            status_code=400, detail="El archivo CSV debe estar codificado en UTF-8"
+        ) from exc
+
+    lector = csv.DictReader(StringIO(contenido, newline=""), delimiter=",", strict=True)
+    try:
+        encabezados = lector.fieldnames
+    except csv.Error as exc:
+        raise HTTPException(status_code=400, detail="El encabezado CSV no es válido") from exc
+
+    if not encabezados:
+        raise HTTPException(status_code=400, detail="El archivo CSV está vacío")
+
+    encabezados = [encabezado.strip() for encabezado in encabezados]
+    if len(encabezados) != len(set(encabezados)):
+        raise HTTPException(status_code=400, detail="El CSV contiene encabezados repetidos")
+    lector.fieldnames = encabezados
+
+    requeridos = {
+        campo
+        for campo, definicion in PacienteCreate.model_fields.items()
+        if definicion.is_required()
+    }
+    faltantes = sorted(requeridos - set(encabezados))
+    if faltantes:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Faltan columnas obligatorias: "
+                f"{', '.join(faltantes)}. El separador debe ser una coma."
+            ),
+        )
+
+    insertados = 0
+    ids_error: list[int] = []
+    numero_registro = 0
+
+    while True:
+        numero_registro += 1
+        try:
+            fila = next(lector)
+        except StopIteration:
+            break
+        except csv.Error:
+            ids_error.append(numero_registro)
+            continue
+
+        id_error = _id_fila_csv(fila, numero_registro)
+        try:
+            datos = _datos_paciente_csv(fila)
+            paciente_data = PacienteCreate.model_validate(datos)
+
+            # Cada fila usa un savepoint: un error no revierte las filas válidas.
+            with db.begin_nested():
+                db.add(Paciente(**paciente_data.model_dump()))
+                db.flush()
+            insertados += 1
+        except (IntegrityError, ValidationError, ValueError):
+            ids_error.append(id_error)
+
+    try:
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail="No fue posible completar la importación"
+        ) from exc
+
+    return PacientesCSVResponse(
+        usuarios_insertados=insertados,
+        iderror=ids_error,
+    )
 
 
 @router.post("/", response_model=PacienteResponse, status_code=status.HTTP_201_CREATED)

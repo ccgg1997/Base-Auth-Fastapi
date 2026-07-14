@@ -1,0 +1,194 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e51] [cursor=pointer]:
+    - img [ref=e52]
+  - alert [ref=e55]
+  - generic [ref=e64]:
+    - complementary [ref=e65]:
+      - generic [ref=e67]:
+        - img [ref=e69]
+        - generic [ref=e72]:
+          - strong [ref=e73]: SaludPlus
+          - text: Gestión de pacientes
+      - navigation "Navegación principal" [ref=e74]:
+        - link "Dashboard" [ref=e75] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e76]
+          - text: Dashboard
+        - link "Pacientes" [ref=e81] [cursor=pointer]:
+          - /url: /pacientes
+          - img [ref=e82]
+          - text: Pacientes
+      - button "Cerrar sesión" [ref=e88] [cursor=pointer]:
+        - img [ref=e89]
+        - text: Cerrar sesión
+    - generic [ref=e92]:
+      - banner [ref=e93]:
+        - generic [ref=e94]:
+          - button "Notificaciones" [ref=e95] [cursor=pointer]:
+            - img [ref=e96]
+          - generic [ref=e99]:
+            - paragraph [ref=e100]: Administrador Demo
+            - paragraph [ref=e101]: admin.demo
+          - img [ref=e103]
+      - main [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - paragraph [ref=e110]: RESUMEN OPERATIVO
+              - heading "Dashboard de pacientes" [level=1] [ref=e111]
+              - paragraph [ref=e112]: Indicadores y prioridades del periodo seleccionado.
+            - generic [ref=e113]:
+              - generic [ref=e114]:
+                - text: Desde
+                - textbox "Desde" [ref=e115]: 2026-06-15
+              - generic [ref=e116]:
+                - text: Hasta
+                - textbox "Hasta" [ref=e117]: 2026-07-14
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - generic [ref=e121]: Ciudad
+              - combobox "Ciudad" [ref=e122]:
+                - option "Todos" [selected]
+              - img
+            - generic [ref=e123]:
+              - generic [ref=e124]: EPS
+              - combobox "EPS" [ref=e125]:
+                - option "Todos" [selected]
+              - img
+            - generic [ref=e126]:
+              - generic [ref=e127]: Estado
+              - combobox "Estado" [ref=e128]:
+                - option "Todos" [selected]
+              - img
+            - generic [ref=e129]:
+              - generic [ref=e130]: Prioridad
+              - combobox "Prioridad" [ref=e131]:
+                - option "Todos" [selected]
+              - img
+            - generic [ref=e132]:
+              - generic [ref=e133]: Género
+              - combobox "Género" [ref=e134]:
+                - option "Todos" [selected]
+              - img
+            - button "Limpiar" [disabled]:
+              - img
+              - text: Limpiar
+          - generic [ref=e135]:
+            - region "Métricas principales" [ref=e136]:
+              - generic [ref=e137]:
+                - generic [ref=e138]:
+                  - img [ref=e140]
+                  - generic [ref=e145]:
+                    - paragraph [ref=e146]: Pacientes registrados
+                    - paragraph [ref=e147]: "0"
+                - generic [ref=e148]:
+                  - img [ref=e149]
+                  - text: 0%
+                  - generic [ref=e151]: vs. periodo anterior
+              - generic [ref=e152]:
+                - generic [ref=e153]:
+                  - img [ref=e155]
+                  - generic [ref=e158]:
+                    - paragraph [ref=e159]: Pacientes pendientes
+                    - paragraph [ref=e160]: "0"
+                - generic [ref=e161]:
+                  - img [ref=e162]
+                  - text: 0%
+                  - generic [ref=e164]: vs. periodo anterior
+              - generic [ref=e165]:
+                - generic [ref=e166]:
+                  - img [ref=e168]
+                  - generic [ref=e171]:
+                    - paragraph [ref=e172]: En atención
+                    - paragraph [ref=e173]: "0"
+                - generic [ref=e174]:
+                  - img [ref=e175]
+                  - text: 0%
+                  - generic [ref=e177]: vs. periodo anterior
+              - generic [ref=e178]:
+                - generic [ref=e179]:
+                  - img [ref=e181]
+                  - generic [ref=e184]:
+                    - paragraph [ref=e185]: Pacientes atendidos
+                    - paragraph [ref=e186]: "0"
+                - generic [ref=e187]:
+                  - img [ref=e188]
+                  - text: 0%
+                  - generic [ref=e190]: vs. periodo anterior
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - img [ref=e194]
+                  - generic [ref=e196]:
+                    - paragraph [ref=e197]: Prioridad alta
+                    - paragraph [ref=e198]: "0"
+                - generic [ref=e199]:
+                  - img [ref=e200]
+                  - text: 0%
+                  - generic [ref=e202]: vs. periodo anterior
+            - generic [ref=e203]:
+              - generic [ref=e204]:
+                - heading "Pacientes por estado" [level=2] [ref=e205]
+                - generic [ref=e206]:
+                  - generic [ref=e207]:
+                    - generic [ref=e208]: "0"
+                    - generic [ref=e210]: Pendiente
+                  - generic [ref=e211]:
+                    - generic [ref=e212]: "0"
+                    - generic [ref=e214]: En atención
+                  - generic [ref=e215]:
+                    - generic [ref=e216]: "0"
+                    - generic [ref=e218]: Atendido
+              - generic [ref=e219]:
+                - heading "Distribución por prioridad" [level=2] [ref=e220]
+                - generic [ref=e221]:
+                  - generic [ref=e224]:
+                    - strong [ref=e225]: "0"
+                    - text: Total
+                  - generic [ref=e226]:
+                    - generic [ref=e227]:
+                      - generic [ref=e229]: Alta
+                      - strong [ref=e230]: 0%
+                    - generic [ref=e231]:
+                      - generic [ref=e233]: Media
+                      - strong [ref=e234]: 0%
+                    - generic [ref=e235]:
+                      - generic [ref=e237]: Baja
+                      - strong [ref=e238]: 0%
+              - generic [ref=e239]:
+                - heading "Registros por día" [level=2] [ref=e240]
+                - generic [ref=e241]:
+                  - img "Gráfica de registros por día" [ref=e242]
+                  - generic [ref=e250]:
+                    - generic [ref=e251]: 8 de jul
+                    - generic [ref=e252]: 9 de jul
+                    - generic [ref=e253]: 10 de jul
+                    - generic [ref=e254]: 11 de jul
+                    - generic [ref=e255]: 12 de jul
+                    - generic [ref=e256]: 13 de jul
+                    - generic [ref=e257]: 14 de jul
+              - generic [ref=e258]:
+                - generic [ref=e259]:
+                  - heading "Atención rápida" [level=2] [ref=e260]
+                  - img [ref=e261]
+                - paragraph [ref=e264]: No hay alertas en este periodo.
+            - generic [ref=e265]:
+              - generic [ref=e266]:
+                - generic [ref=e267]:
+                  - heading "Últimos pacientes registrados" [level=2] [ref=e268]
+                  - paragraph [ref=e269]: Los registros más recientes del periodo.
+                - generic [ref=e270]:
+                  - img [ref=e271]
+                  - textbox "Buscar por nombre o documento" [ref=e274]
+              - table [ref=e276]:
+                - rowgroup [ref=e277]:
+                  - row "Documento Nombre completo Ciudad EPS Prioridad Estado Fecha creación" [ref=e278]:
+                    - columnheader "Documento" [ref=e279]
+                    - columnheader "Nombre completo" [ref=e280]
+                    - columnheader "Ciudad" [ref=e281]
+                    - columnheader "EPS" [ref=e282]
+                    - columnheader "Prioridad" [ref=e283]
+                    - columnheader "Estado" [ref=e284]
+                    - columnheader "Fecha creación" [ref=e285]
+                - rowgroup [ref=e286]:
+                  - row "No se encontraron pacientes." [ref=e287]:
+                    - cell "No se encontraron pacientes." [ref=e288]

@@ -1,0 +1,184 @@
+- generic [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e51] [cursor=pointer]:
+    - img [ref=e52]
+  - alert [ref=e55]
+  - generic [ref=e64]:
+    - complementary [ref=e65]:
+      - generic [ref=e67]:
+        - img [ref=e69]
+        - generic [ref=e72]:
+          - strong [ref=e73]: SaludPlus
+          - text: Gestión de pacientes
+      - navigation "Navegación principal" [ref=e74]:
+        - link "Dashboard" [ref=e75] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e76]
+          - text: Dashboard
+        - link "Pacientes" [ref=e81] [cursor=pointer]:
+          - /url: /pacientes
+          - img [ref=e82]
+          - text: Pacientes
+      - button "Cerrar sesión" [ref=e88] [cursor=pointer]:
+        - img [ref=e89]
+        - text: Cerrar sesión
+    - generic [ref=e92]:
+      - banner [ref=e93]:
+        - generic [ref=e94]:
+          - button "Notificaciones" [ref=e95] [cursor=pointer]:
+            - img [ref=e96]
+          - generic [ref=e99]:
+            - paragraph [ref=e100]: Administrador Demo
+            - paragraph [ref=e101]: admin.demo
+          - img [ref=e103]
+      - main [ref=e106]:
+        - generic [ref=e289]:
+          - generic [ref=e290]:
+            - generic [ref=e291]:
+              - paragraph [ref=e292]: ADMINISTRACIÓN
+              - heading "Gestión de pacientes" [level=1] [ref=e293]
+              - paragraph [ref=e294]: Consulta, registra y actualiza la información de los pacientes.
+            - button "Nuevo paciente" [active] [ref=e295] [cursor=pointer]:
+              - img [ref=e296]
+              - text: Nuevo paciente
+          - generic [ref=e299]:
+            - generic [ref=e300]:
+              - generic [ref=e301]: Buscar paciente
+              - img [ref=e302]
+              - textbox "Buscar paciente" [ref=e305]:
+                - /placeholder: Buscar por nombre, documento o teléfono
+            - generic [ref=e306]:
+              - generic [ref=e307]: Filtrar por estado
+              - combobox "Filtrar por estado" [ref=e308]:
+                - option "Todos los estados" [selected]
+                - option "Pendiente"
+                - option "En atención"
+                - option "Atendido"
+              - img
+            - generic [ref=e309]:
+              - generic [ref=e310]: Filtrar por prioridad
+              - combobox "Filtrar por prioridad" [ref=e311]:
+                - option "Todas las prioridades" [selected]
+                - option "Alta"
+                - option "Media"
+                - option "Baja"
+              - img
+            - button "Limpiar filtros" [disabled]:
+              - img
+              - text: Limpiar filtros
+          - generic [ref=e312]:
+            - table [ref=e314]:
+              - rowgroup [ref=e315]:
+                - row "Nombre completo Tipo doc. Documento Fecha nacimiento Género Teléfono EPS Prioridad Estado Fecha creación Acciones" [ref=e316]:
+                  - columnheader "Nombre completo" [ref=e317]
+                  - columnheader "Tipo doc." [ref=e318]
+                  - columnheader "Documento" [ref=e319]
+                  - columnheader "Fecha nacimiento" [ref=e320]
+                  - columnheader "Género" [ref=e321]
+                  - columnheader "Teléfono" [ref=e322]
+                  - columnheader "EPS" [ref=e323]
+                  - columnheader "Prioridad" [ref=e324]
+                  - columnheader "Estado" [ref=e325]
+                  - columnheader "Fecha creación" [ref=e326]
+                  - columnheader "Acciones" [ref=e327]
+              - rowgroup [ref=e328]:
+                - row "No se encontraron pacientes Prueba con otros criterios de búsqueda." [ref=e329]:
+                  - cell "No se encontraron pacientes Prueba con otros criterios de búsqueda." [ref=e330]:
+                    - img [ref=e331]
+                    - paragraph [ref=e336]: No se encontraron pacientes
+                    - paragraph [ref=e337]: Prueba con otros criterios de búsqueda.
+            - generic [ref=e338]:
+              - paragraph [ref=e339]:
+                - text: Mostrando
+                - strong [ref=e340]: "0"
+                - text: a
+                - strong [ref=e341]: "0"
+                - text: de
+                - strong [ref=e342]: "0"
+                - text: pacientes
+              - generic [ref=e343]:
+                - button "Página anterior" [disabled]:
+                  - img
+                - generic [ref=e344]: "1"
+                - generic [ref=e345]: de 1
+                - button "Página siguiente" [disabled]:
+                  - img
+          - dialog "Nuevo paciente" [ref=e346]:
+            - generic [ref=e347]:
+              - heading "Nuevo paciente" [level=2] [ref=e349]
+              - button "Cerrar" [ref=e350] [cursor=pointer]:
+                - img [ref=e351]
+            - generic [ref=e353]:
+              - generic [ref=e355]:
+                - generic [ref=e356]:
+                  - generic [ref=e357]: Nombre completo*
+                  - textbox "Nombre completo*" [ref=e358]:
+                    - /placeholder: Ingrese el nombre completo
+                - generic [ref=e359]:
+                  - generic [ref=e360]: Tipo de documento*
+                  - generic [ref=e361]:
+                    - combobox "Tipo de documento*" [ref=e362]:
+                      - option "Seleccione…" [selected]
+                      - option "Cédula de ciudadanía"
+                      - option "Tarjeta de identidad"
+                      - option "Cédula de extranjería"
+                      - option "Registro civil"
+                      - option "Pasaporte"
+                    - img
+                - generic [ref=e363]:
+                  - generic [ref=e364]: Número de documento*
+                  - textbox "Número de documento*" [ref=e365]:
+                    - /placeholder: Número de documento
+                - generic [ref=e366]:
+                  - generic [ref=e367]: Fecha de nacimiento*
+                  - textbox "Fecha de nacimiento* La fecha no puede ser futura" [ref=e368]
+                  - generic [ref=e369]: La fecha no puede ser futura
+                - generic [ref=e370]:
+                  - generic [ref=e371]: Género*
+                  - generic [ref=e372]:
+                    - combobox "Género*" [ref=e373]:
+                      - option "Seleccione…" [selected]
+                      - option "Femenino"
+                      - option "Masculino"
+                      - option "No binario"
+                      - option "Otro"
+                      - option "Prefiere no decir"
+                    - img
+                - generic [ref=e374]:
+                  - text: Teléfono
+                  - textbox "Teléfono" [ref=e375]:
+                    - /placeholder: Número de teléfono
+                - generic [ref=e376]:
+                  - text: Correo electrónico
+                  - textbox "Correo electrónico" [ref=e377]:
+                    - /placeholder: correo@ejemplo.com
+                - generic [ref=e378]:
+                  - text: EPS
+                  - generic [ref=e379]:
+                    - textbox "EPS" [ref=e380]:
+                      - /placeholder: Código
+                    - textbox "Nombre de la EPS" [ref=e381]
+                - generic [ref=e382]:
+                  - text: Ciudad
+                  - textbox "Ciudad" [ref=e383]
+                - generic [ref=e384]:
+                  - generic [ref=e385]: Prioridad*
+                  - generic [ref=e386]:
+                    - combobox "Prioridad*" [ref=e387]:
+                      - option "Seleccione…" [selected]
+                      - option "Alta"
+                      - option "Media"
+                      - option "Baja"
+                    - img
+                - generic [ref=e388]:
+                  - generic [ref=e389]: Estado*
+                  - generic [ref=e390]:
+                    - combobox "Estado*" [ref=e391]:
+                      - option "Pendiente" [selected]
+                      - option "En atención"
+                      - option "Atendido"
+                    - img
+              - generic [ref=e392]:
+                - button "Cancelar" [ref=e393] [cursor=pointer]
+                - button "Guardar" [ref=e394] [cursor=pointer]:
+                  - img [ref=e395]
+                  - text: Guardar

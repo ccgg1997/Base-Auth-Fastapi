@@ -81,3 +81,8 @@ class PacienteResponse(BaseModel):
     active: bool
     fecha_creacion: datetime
     fecha_actualizacion: datetime
+
+
+class PacientesCSVResponse(BaseModel):
+    usuarios_insertados: int
+    iderror: list[int]

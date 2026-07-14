@@ -1,26 +1,130 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: oklch(0.976 0.006 247);
+  --foreground: oklch(0.24 0.04 257);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.04 257);
+  --primary: oklch(0.58 0.19 255);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.025 250);
+  --secondary-foreground: oklch(0.43 0.12 255);
+  --muted: oklch(0.96 0.008 250);
+  --muted-foreground: oklch(0.53 0.035 257);
+  --accent: oklch(0.94 0.04 248);
+  --accent-foreground: oklch(0.45 0.16 255);
+  --border: oklch(0.9 0.015 250);
+  --input: oklch(0.88 0.02 250);
+  --ring: oklch(0.64 0.18 254);
+  --success: oklch(0.67 0.16 148);
+  --success-soft: oklch(0.94 0.055 148);
+  --warning: oklch(0.75 0.16 75);
+  --warning-soft: oklch(0.96 0.06 83);
+  --destructive: oklch(0.63 0.23 27);
+  --destructive-soft: oklch(0.96 0.045 25);
+  --info-soft: oklch(0.94 0.045 250);
+  --sidebar: oklch(0.995 0.003 250);
+  --radius: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.19 0.025 257);
+    --foreground: oklch(0.94 0.012 250);
+    --card: oklch(0.23 0.03 257);
+    --card-foreground: oklch(0.94 0.012 250);
+    --primary: oklch(0.7 0.16 252);
+    --primary-foreground: oklch(0.18 0.04 257);
+    --secondary: oklch(0.29 0.04 257);
+    --secondary-foreground: oklch(0.88 0.04 250);
+    --muted: oklch(0.27 0.025 257);
+    --muted-foreground: oklch(0.72 0.03 250);
+    --accent: oklch(0.31 0.06 255);
+    --accent-foreground: oklch(0.9 0.04 250);
+    --border: oklch(0.34 0.03 257);
+    --input: oklch(0.39 0.035 257);
+    --ring: oklch(0.7 0.16 252);
+    --success: oklch(0.72 0.15 148);
+    --success-soft: oklch(0.3 0.07 148);
+    --warning: oklch(0.8 0.15 79);
+    --warning-soft: oklch(0.31 0.06 75);
+    --destructive: oklch(0.72 0.19 27);
+    --destructive-soft: oklch(0.32 0.07 27);
+    --info-soft: oklch(0.3 0.055 252);
+    --sidebar: oklch(0.21 0.028 257);
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-info-soft: var(--info-soft);
+  --color-sidebar: var(--sidebar);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --radius-lg: var(--radius);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  background: var(--background);
 }
 
 body {
+  min-height: 100%;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--primary) 24%, transparent);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 180ms ease-out both;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--input) transparent;
 }
