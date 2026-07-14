@@ -7,10 +7,11 @@ existente de SaludPlus como única fuente de datos. No importa código de las ca
 ## Configuración
 
 1. Crea un bot con `@BotFather` en Telegram y copia el token.
-2. Copia `.env.example` a `.env` (el repositorio ya incluye un `.env` vacío para completar).
+2. Copia `.env.example` a `.env`; los archivos `.env` reales no se versionan.
 3. Configura `BOT_TOKEN`, `OPENAI_API_KEY`, `API_USERNAME` y `API_PASSWORD`.
 4. Inicia el bot una primera vez y ejecuta `/start` en Telegram. El bot mostrará el
-   ID del chat; agrégalo a `BOT_ALLOWED_CHAT_IDS` y reinicia el servicio.
+   ID del chat; agrégalo a `BOT_ALLOWED_CHAT_IDS`. Si usas Docker, recrea el
+   contenedor para cargar el nuevo entorno.
 
 La cuenta indicada en `API_USERNAME` y `API_PASSWORD` debe existir y estar activa en
 la API de SaludPlus. El bot obtiene un JWT mediante `/auth/token` y lo renueva cuando
@@ -18,17 +19,26 @@ vence.
 
 ## Ejecución con Docker
 
-Con el backend principal disponible en `http://localhost:3000`:
+El bot forma parte del `compose.yml` de la raíz. Configura
+`API_BASE_URL=http://backend:4000` y ejecuta desde la raíz del repositorio:
 
 ```powershell
-cd bot
-docker compose up --build -d
+Copy-Item bot/.env.example bot/.env
+# Edita bot/.env antes de continuar.
+docker compose up --build -d bot
 docker compose logs -f bot
 ```
 
-`API_BASE_URL=http://host.docker.internal:3000` permite que el contenedor aislado
-consuma el puerto publicado por el backend. Para ejecutar el proceso directamente en
-la máquina, cambia el valor a `http://localhost:3000`.
+Compose resuelve `backend` mediante su red interna y utiliza el puerto `4000` del
+contenedor. Para ejecutar el proceso directamente en la máquina, cambia el valor a
+`http://localhost:3000`.
+
+Después de cambiar `bot/.env`, vuelve a crear el contenedor (un simple `restart` no
+recarga `env_file`):
+
+```powershell
+docker compose up -d --force-recreate bot
+```
 
 ## Ejecución local
 

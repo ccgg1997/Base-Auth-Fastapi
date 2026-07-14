@@ -1,4 +1,9 @@
 .env
 
 __pycache__/
+.venv/
 node_modules/
+
+# Capturas locales que contienen tokens o credenciales de ejecución
+mockups-data/docker-compose.png
+mockups-data/generar-token.png

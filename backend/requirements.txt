@@ -4,7 +4,7 @@ fastapi
 uvicorn[standard]
 psycopg2-binary
 
-#databaseor
+#databaseorm
 SQLAlchemy
 
 #tipado

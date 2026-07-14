@@ -7,7 +7,8 @@ Interfaz Next.js para autenticación, dashboard y gestión de pacientes.
 Con el backend disponible en `http://localhost:3000`:
 
 ```bash
-npm install
+cp .env.example .env.local
+npm ci
 npm run dev
 ```
 
@@ -15,7 +16,7 @@ La aplicación queda disponible en `http://localhost:3001`, puerto autorizado po
 
 `npm run dev` limpia primero la caché regenerable de `.next` para evitar manifiestos de componentes desactualizados entre compilaciones de producción y desarrollo.
 
-Para apuntar a otra API, define:
+Para apuntar a otra API, define en `.env.local`:
 
 ```bash
 NEXT_PUBLIC_API_URL=https://api.ejemplo.com

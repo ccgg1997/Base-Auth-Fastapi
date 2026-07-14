@@ -1,719 +1,402 @@
-# Estructura FastAPI + SQLAlchemy + PostgreSQL + JWT
+# SaludPlus
 
-Esta guía explica qué contiene actualmente cada archivo del backend, por qué se separa y cómo se relaciona con el resto de la aplicación.
+Plataforma de gestión de pacientes compuesta por una API REST, una interfaz web y un bot de Telegram con asistencia de OpenAI. El repositorio incluye la infraestructura local necesaria para ejecutar PostgreSQL, pgAdmin, el backend y el bot mediante Docker Compose; el frontend se inicia por separado.
 
-## 1. Árbol del proyecto
+## Funcionalidades principales
+
+- Autenticación con JWT, contraseñas con hash Argon2 y registro de intentos de acceso.
+- Dashboard con métricas, filtros, tendencias y pacientes que requieren atención.
+- Gestión de pacientes: búsqueda, paginación, creación, edición, baja lógica e importación CSV.
+- Interfaz responsive con Next.js, TypeScript, Tailwind CSS y tema claro/oscuro.
+- Bot de Telegram de solo lectura con comandos y preguntas en lenguaje natural.
+- Datos de demostración opcionales para facilitar la ejecución local.
+- Documentación interactiva de la API con Swagger UI y ReDoc.
+
+## Vista previa
+
+![Dashboard de pacientes de SaludPlus](mockups-data/mockup-fronted.png)
+
+## Proyectos y servicios
+
+| Componente | Ubicación | Responsabilidad | Ejecución | Puerto local |
+| --- | --- | --- | --- | --- |
+| Frontend | [`frontend/`](frontend/) | Login, dashboard y gestión de pacientes | Node.js, fuera de Compose | `3001` |
+| Backend | [`backend/`](backend/) | API REST, autenticación, reglas de negocio y persistencia | Docker Compose o Python | `3000` → `4000` |
+| Bot | [`bot/`](bot/) | Interfaz de Telegram y respuestas asistidas por OpenAI | Docker Compose o Python | No expone puerto |
+| PostgreSQL | `bd` en [`compose.yml`](compose.yml) | Base de datos relacional | Docker Compose | `5432` |
+| pgAdmin | `bdcli` en [`compose.yml`](compose.yml) | Administración local de PostgreSQL | Docker Compose | `8080` |
+
+El frontend y el bot son clientes independientes del backend; no se comunican directamente entre sí.
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+    Web[Usuario web] -->|HTTP :3001| Front[Next.js]
+    Front -->|REST + JWT<br/>localhost:3000| API[FastAPI<br/>contenedor :4000]
+
+    Telegram[Usuario de Telegram] <--> TG[Telegram Bot API]
+    TG <--> Bot[Bot SaludPlus]
+    Bot -->|REST + JWT<br/>backend:4000| API
+    Bot -->|Preguntas en lenguaje natural| OpenAI[OpenAI API]
+
+    API -->|SQLAlchemy| DB[(PostgreSQL :5432)]
+    Admin[pgAdmin :8080] --> DB
+```
+
+### Capas del backend
 
 ```text
-backend/
-├── requirements.txt
-├── backend.Dockerfile
-└── src/
-    ├── main.py
-    ├── core/
-    │   ├── config.py
-    │   └── security.py
-    ├── db/
-    │   ├── base.py
-    │   └── session.py
-    ├── models/
-    │   ├── product.py
-    │   └── user.py
-    ├── dtos/
-    │   ├── product.py
-    │   ├── user.py
-    │   └── auth.py
-    ├── dependencies/
-    │   └── auth.py
-    └── routers/
-        ├── producto.py
-        └── auth.py
+HTTP request
+    │
+    ▼
+routers/        Endpoints de auth, dashboard, pacientes, productos y administración
+    │
+    ├── dependencies/   Validación del Bearer JWT y usuario actual
+    ├── dtos/           Contratos de entrada y salida con Pydantic
+    └── models/         Entidades y relaciones de SQLAlchemy
+                         │
+                         ▼
+                    db/ + PostgreSQL
 ```
 
-- `models/`: estructura de las tablas.
-- `dtos/`: JSON que entra y sale.
-- `routers/`: endpoints HTTP.
-- `dependencies/`: lógica reutilizable ejecutada por `Depends()`.
-- `core/`: configuración y seguridad sin endpoints.
+Al iniciar, el backend crea las tablas faltantes con SQLAlchemy y, si `SEED_DEMO_DATA=true`, agrega los roles y usuarios demo que aún no existan. El proyecto no incluye migraciones de base de datos.
 
-[Documentación: aplicaciones grandes con FastAPI](https://fastapi.tiangolo.com/tutorial/bigger-applications/)
+## Tecnologías
 
-## 2. `core/config.py`
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS 4 y Axios.
+- **Backend:** Python 3.10, FastAPI, SQLAlchemy, Pydantic, PyJWT y Argon2.
+- **Bot:** Python 3.12, `python-telegram-bot`, OpenAI SDK y HTTPX.
+- **Infraestructura:** Docker Compose, PostgreSQL 16 y pgAdmin 4.
 
-**Qué:** lee configuración y secretos desde variables de entorno.
+## Requisitos previos
 
-**Por qué:** la URL de PostgreSQL y la clave JWT no deben escribirse directamente en el código.
+Para la ejecución recomendada se necesita:
 
-```python
-from pydantic_settings import BaseSettings
-class Settings(BaseSettings):
-    database_url: str
-    jwt_secret_key: str
-    jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
-settings = Settings()
+- Git.
+- Docker Engine o Docker Desktop con Docker Compose v2.
+- Node.js `20.9` o superior y npm para el frontend.
+- Un token de Telegram y una API key de OpenAI únicamente si se va a iniciar el bot.
+
+Python solo es necesario cuando se ejecuta el backend o el bot fuera de Docker.
+
+## Inicio rápido
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/ccgg1997/docker-c.git
+cd docker-c
 ```
 
-**Documentación:** [Pydantic Settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) · [Settings en FastAPI](https://fastapi.tiangolo.com/advanced/settings/)
+### 2. Crear los archivos de entorno
 
-## 3. `core/security.py`
+Los archivos `.env` reales están ignorados por Git. Copia las plantillas y edita únicamente las copias.
 
-**Qué:** genera hashes Argon2id y crea o valida JWT.
-
-**Por qué:** la criptografía queda separada de FastAPI, HTTP y la base de datos.
-
-```python
-from datetime import datetime, timedelta, timezone
-
-import jwt
-from pwdlib import PasswordHash
-
-from src.core.config import settings
-
-password_hash = PasswordHash.recommended()
-
-def hash_password(password: str) -> str:
-    return password_hash.hash(password)
-
-def verify_password(password: str, hashed_password: str) -> bool:
-    return password_hash.verify(password, hashed_password)
-
-def create_access_token(subject: str):
-    now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(minutes=settings.access_token_expire_minutes)
-
-    payload = {
-        "sub": subject,
-        "iat": now,
-        "exp": expires_at,
-    }
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
-
-def decode_access_token(token: str):
-    return jwt.decode(
-        token,
-        settings.jwt_secret_key,
-        algorithms=[settings.jwt_algorithm],
-        options={"require": ["exp", "iat", "sub"]},
-    )
-```
-
-Solo se guarda el hash. La contraseña original nunca se guarda ni se incluye en el JWT.
-
-**Documentación:** [JWT y hashing en FastAPI](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/) · [pwdlib](https://frankie567.github.io/pwdlib/) · [PyJWT](https://pyjwt.readthedocs.io/en/stable/usage.html)
-
-## 4. Base de datos
-
-### `db/base.py`
-
-**Qué:** crea la clase padre de todos los modelos ORM.
-
-```python
-from sqlalchemy.orm import declarative_base
-Base = declarative_base()
-```
-
-**Documentación:** [mapeo declarativo](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html)
-
-### `db/session.py`
-
-**Qué:** crea el Engine, la fábrica de sesiones y una sesión por request.
-
-```python
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from src.core.config import settings
-engine = create_engine(settings.database_url)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-```
-
-```text
-request → get_db() → endpoint → finally → db.close()
-```
-
-SQLAlchemy reconoce el motor por la URL, por ejemplo `postgresql+psycopg2://...`.
-
-**Documentación:** [Engine](https://docs.sqlalchemy.org/en/20/core/engines.html) · [Session](https://docs.sqlalchemy.org/en/20/orm/session_basics.html) · [dependencias con `yield`](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/)
-
-## 5. Modelos SQLAlchemy
-
-### `models/product.py`
-
-**Qué:** define las tablas `productos` y `cities`.
-
-```python
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, JSON, String
-from sqlalchemy.ext.mutable import MutableList
-
-from src.db.base import Base
-
-
-class Producto(Base):
-    __tablename__ = "productos"
-
-    id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, unique=True, nullable=False)
-    precio = Column(Float, nullable=False)
-    disponible = Column(Boolean, default=True)
-    cityId = Column(Integer, ForeignKey("cities.id"), nullable=True)
-    tags = Column(MutableList.as_mutable(JSON), default=list, nullable=False)
-    descripcion = Column(String, nullable=True)
-
-
-class City(Base):
-    __tablename__ = "cities"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    country = Column(String, nullable=False)
-```
-
-**Documentación:** [tablas declarativas](https://docs.sqlalchemy.org/en/20/orm/declarative_tables.html) · [JSON](https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.JSON) · [MutableList](https://docs.sqlalchemy.org/en/20/orm/extensions/mutable.html)
-
-### `models/user.py`
-
-**Qué:** define la tabla de usuarios. `hashed_password` guarda Argon2id, no texto plano.
-
-```python
-from sqlalchemy import Boolean, Column, Integer, String
-
-from src.db.base import Base
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, nullable=False, index=True)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
-```
-
-**Documentación:** [columnas ORM](https://docs.sqlalchemy.org/en/20/orm/declarative_tables.html) · [restricciones `UNIQUE`](https://docs.sqlalchemy.org/en/20/core/constraints.html)
-
-## 6. DTOs Pydantic
-
-### `dtos/product.py`
-
-**Qué:** valida el JSON de productos y controla la respuesta.
-
-```python
-from typing import List, Optional
-
-from pydantic import BaseModel, Field
-
-
-class ProductoCreate(BaseModel):
-    nombre: str
-    precio: float
-    disponible: bool = True
-    tags: List[str] = []
-    descripcion: Optional[str] = None
-    cityId: Optional[int] = None
-
-
-class City(BaseModel):
-    id: int
-    name: str
-    country: str
-
-    class Config:
-        from_attributes = True
-
-
-class ProductoOut(BaseModel):
-    id: int
-    nombre: str
-    precio: float
-    descripcion: Optional[str] = None
-    tags: list[str] = Field(default_factory=list)
-    disponible: bool = True
-    cityId: Optional[int] = None
-
-    class Config:
-        from_attributes = True
-```
-
-### `dtos/user.py` y `dtos/auth.py`
-
-**Qué:** valida el registro y evita que el hash aparezca en la respuesta.
-
-```python
-from pydantic import BaseModel, EmailStr, Field
-
-
-class UserCreate(BaseModel):
-    username: EmailStr
-    password: str = Field(..., min_length=6, max_length=100)
-
-
-class UserOut(BaseModel):
-    id: int
-    username: EmailStr
-    is_active: bool
-
-    class Config:
-        from_attributes = True
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    expires_in: int
-```
-
-El modelo ORM usa `String`; `EmailStr` solamente valida la entrada y salida HTTP.
-
-**Documentación:** [modelos Pydantic](https://docs.pydantic.dev/latest/concepts/models/) · [`EmailStr`](https://docs.pydantic.dev/latest/api/networks/#pydantic.networks.EmailStr) · [`response_model`](https://fastapi.tiangolo.com/tutorial/response-model/)
-
-## 7. `dependencies/auth.py`
-
-**Qué:** extrae el Bearer token, valida el JWT y devuelve el usuario actual.
-
-**Por qué no va en `core/security.py`:** aquí sí se usan `Depends`, HTTP y SQLAlchemy.
-
-```python
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jwt.exceptions import InvalidTokenError
-from sqlalchemy.orm import Session
-from src.core.security import decode_access_token
-from src.db.session import get_db
-from src.models.user import User
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
-
-
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="No se pudo validar las credenciales",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = decode_access_token(token)
-        user_id: str = payload.get("sub")
-    except (InvalidTokenError, KeyError, TypeError, ValueError) as exc:
-        raise credentials_exception from exc
-
-    user = db.query(User).filter(User.username == user_id).first()
-    if user is None or not user.is_active:
-        raise credentials_exception
-    return user
-```
-
-En la implementación actual, el claim `sub` del JWT contiene el `username` (el correo), por eso la dependencia busca con `User.username`. El valor usado al crear y al validar el token debe mantenerse consistente.
-
-**Documentación:** [usuario actual](https://fastapi.tiangolo.com/tutorial/security/get-current-user/) · [`OAuth2PasswordBearer`](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordBearer)
-
-## 8. `routers/auth.py`
-
-**Qué:** contiene registro, login y consulta del usuario autenticado.
-
-```python
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
-
-from src.core.config import settings
-from src.core.security import create_access_token, hash_password, verify_password
-from src.db.session import get_db
-from src.dependencies.auth import get_current_user
-from src.dtos.auth import Token
-from src.dtos.user import UserCreate, UserOut
-from src.models.user import User
-
-
-router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-@router.post("/register", response_model=UserOut)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.username == user.username).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
-
-    new_user = User(
-        username=user.username,
-        hashed_password=hash_password(user.password),
-    )
-    db.add(new_user)
-    try:
-        db.commit()
-    except Exception as exc:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail=exc.args[0] if isinstance(exc, IntegrityError) else "Error al registrar el usuario",
-        )
-    db.refresh(new_user)
-    return new_user
-
-
-@router.post("/token", response_model=Token)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
-):
-    user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Nombre de usuario o contraseña incorrectos")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="El usuario está inactivo")
-
-    return {
-        "access_token": create_access_token(form_data.username),
-        "token_type": "bearer",
-        "expires_in": settings.access_token_expire_minutes * 60,
-    }
-
-
-@router.get("/me", response_model=UserOut)
-def get_my_user(
-    current_user: User = Depends(get_current_user),
-):
-    return current_user
-```
-
-`/auth/token` recibe formulario `application/x-www-form-urlencoded`, no JSON.
-
-Contratos HTTP actuales: el registro exitoso responde `200`; las credenciales incorrectas responden `400`; un usuario inactivo responde `403`; y un token ausente, inválido o expirado en una ruta protegida responde `401`.
-
-**Documentación:** [OAuth2 con JWT](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/) · [formularios](https://fastapi.tiangolo.com/tutorial/request-forms/)
-
-## 9. `routers/producto.py`
-
-**Qué:** contiene los endpoints CRUD y utiliza los DTOs, modelos y la sesión.
-
-```python
-from fastapi import APIRouter, Body, Depends, HTTPException
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
-
-from src.db.session import get_db
-from src.dependencies.auth import get_current_user
-from src.dtos.product import ProductoCreate, ProductoOut
-from src.models.product import Producto
-
-
-router = APIRouter(prefix="/v2", tags=["productos"])
-
-
-@router.post(
-    "/",
-    response_model=ProductoOut,
-    dependencies=[Depends(get_current_user)],
-)
-def crear_producto(data: ProductoCreate, db: Session = Depends(get_db)):
-    existing_product = (
-        db.query(Producto)
-        .filter(Producto.nombre == data.nombre)
-        .first()
-    )
-    if existing_product is not None:
-        raise HTTPException(status_code=400, detail="El nombre de producto ya existe")
-
-    producto = Producto(**data.model_dump())
-    db.add(producto)
-    try:
-        db.commit()
-    except Exception as exc:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                exc.args[0]
-                if isinstance(exc, IntegrityError)
-                else "Error al crear el producto"
-            ),
-        )
-    db.refresh(producto)
-    return producto
-
-
-@router.delete(
-    "/",
-    response_model=str,
-    dependencies=[Depends(get_current_user)],
-)
-def eliminar_producto(
-    productName: str = Body(embed=True),
-    db: Session = Depends(get_db),
-):
-    existing_product = (
-        db.query(Producto)
-        .filter(Producto.nombre == productName)
-        .first()
-    )
-    if existing_product is None:
-        raise HTTPException(status_code=400, detail="El nombre de producto ya existe")
-
-    try:
-        existing_product.disponible = False
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail="El nombre de producto ya existe",
-        )
-    db.refresh(existing_product)
-    return "Producto eliminado exitosamente"
-
-
-@router.get(
-    "/",
-    response_model=list[ProductoOut],
-    dependencies=[Depends(get_current_user)],
-)
-def listar_productos(db: Session = Depends(get_db)):
-    return db.query(Producto).filter(Producto.disponible == True).all()
-
-
-@router.get(
-    "/{product_id}",
-    response_model=ProductoOut,
-    dependencies=[Depends(get_current_user)],
-)
-def obtener_producto(product_id: int, db: Session = Depends(get_db)):
-    producto = (
-        db.query(Producto)
-        .filter(
-            Producto.id == product_id,
-            Producto.disponible == True,
-        )
-        .first()
-    )
-    if producto is None:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return producto
-```
-
-El ejemplo conserva el comportamiento del router real; solamente omite los `print()` de depuración y comentarios que no cambian el contrato del endpoint.
-
-Cada operación está protegida con `dependencies=[Depends(get_current_user)]`. Esa forma valida el token sin agregar un parámetro que el endpoint no utiliza. También se podría colocar la dependencia una sola vez en `APIRouter(...)`; ambas opciones son válidas, pero el ejemplo anterior refleja la implementación actual por endpoint.
-
-**Documentación:** [`APIRouter`](https://fastapi.tiangolo.com/reference/apirouter/) · [`Body(embed=True)`](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter) · [dependencias en decoradores](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-in-path-operation-decorators/)
-
-## 10. `main.py`
-
-**Qué:** crea la aplicación, importa modelos y registra routers y middleware.
-
-```python
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-
-from src.db.base import Base
-from src.db.session import engine
-from src.models import product, user
-from src.routers import auth, producto
-
-Base.metadata.create_all(bind=engine)
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://192.168.56.1:3001",
-    ],
-    allow_credentials=True,
-    allow_methods=[
-        "GET",
-        "POST",
-        "PUT",
-        "PATCH",
-        "DELETE",
-        "OPTIONS",
-    ],
-    allow_headers=["Authorization", "Content-Type"],
-)
-
-app.include_router(auth.router)
-app.include_router(producto.router)
-
-
-@app.get("/", response_class=HTMLResponse)
-def hello_world():
-    return "<p>API RUNNING</p>"
-```
-
-`create_all()` crea tablas faltantes, pero no modifica tablas existentes. Para eso se usa [Alembic](https://alembic.sqlalchemy.org/en/latest/).
-
-**Documentación:** [aplicaciones grandes](https://fastapi.tiangolo.com/tutorial/bigger-applications/) · [CORS](https://fastapi.tiangolo.com/tutorial/cors/)
-
-## 11. Dependencias y Docker
-
-### `requirements.txt`
-
-```text
-fastapi
-uvicorn[standard]
-SQLAlchemy
-psycopg2-binary
-pydantic-settings
-pydantic[email]
-python-multipart
-pyjwt
-pwdlib[argon2]
-```
-
-### `backend.Dockerfile`
-
-```dockerfile
-FROM python:3.10.20-alpine3.24
-
-WORKDIR /app
-COPY requirements.txt ./
-RUN pip install -r requirements.txt
-COPY . .
-
-EXPOSE 4000
-
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "4000", "--reload"]
-```
-
-### `compose.yml`
-
-```yaml
-services:
-  bd:
-    container_name: bd
-    image: postgres:16-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: fsdb
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 3s
-      timeout: 3s
-      retries: 10
-      start_period: 5s
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  bdcli:
-    container_name: bdcli
-    image: dpage/pgadmin4:8
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    ports:
-      - "8080:80"
-    depends_on:
-      bd:
-        condition: service_healthy
-
-  backend:
-    container_name: backend
-    build:
-      context: ./backend
-      dockerfile: backend.Dockerfile
-    restart: always
-    ports:
-      - "3000:4000"
-    environment:
-      - database_url=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@bd/${POSTGRES_DB}
-      - jwt_secret_key=${JWT_SECRET_KEY}
-    depends_on:
-      bd:
-        condition: service_healthy
-    volumes:
-      - ./backend:/app
-
-volumes:
-  pgdata: {}
-```
-
-El valor de `POSTGRES_DB` usado por PostgreSQL y el incluido en `database_url` debe ser el mismo. Con la configuración actual, `.env` debe definir `POSTGRES_DB=fsdb`; si se cambia uno, también debe cambiarse el otro.
-
-### Variables de entorno
-
-El repositorio incluye `.envexample`. Antes de iniciar los contenedores, crea el archivo local `.env`:
+PowerShell:
 
 ```powershell
-Copy-Item .envexample .env
+if (-not (Test-Path .env)) { Copy-Item .envexample .env }
+if (-not (Test-Path bot/.env)) { Copy-Item bot/.env.example bot/.env }
+if (-not (Test-Path frontend/.env.local)) { Copy-Item frontend/.env.example frontend/.env.local }
 ```
 
-Después completa estas variables:
+macOS o Linux:
 
-```dotenv
-POSTGRES_USER=
-POSTGRES_PASSWORD=
-POSTGRES_DB=fsdb
-PGADMIN_DEFAULT_EMAIL=
-PGADMIN_DEFAULT_PASSWORD=
-JWT_SECRET_KEY=
+```bash
+cp -n .envexample .env
+cp -n bot/.env.example bot/.env
+cp -n frontend/.env.example frontend/.env.local
 ```
 
-`JWT_SECRET_KEY` no debe quedar vacía: debe ser un secreto largo y aleatorio. `.env` está ignorado por Git y no se debe subir al repositorio.
+Para generar `JWT_SECRET_KEY` puede usarse, por ejemplo:
 
-Si cambia `requirements.txt`, reconstruye la imagen:
+```bash
+openssl rand -hex 32
+```
+
+### 3. Levantar la API y la infraestructura
+
+Levantar todos los servicios:
+
+```bash
+docker compose up --build -d 
+docker compose ps
+```
+
+### 4. Ejecutar el frontend
+
+El frontend **no forma parte de `compose.yml`**. En otra terminal:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Abre [http://localhost:3001](http://localhost:3001).
+
+Para comprobar el build de producción local:
+
+```bash
+npm run build
+npm run start
+```
+
+### 5. Iniciar el bot opcional
+
+Completa como mínimo `BOT_TOKEN`, `OPENAI_API_KEY`, `API_USERNAME` y `API_PASSWORD` en `bot/.env`. Después ejecuta desde la raíz:
+
+```bash
+docker compose up --build -d bot
+docker compose logs -f bot
+```
+
+También se puede levantar todo el Compose de una vez cuando el bot ya está configurado:
+
+```bash
+docker compose up --build -d
+```
+
+En Telegram, envía `/start`. Si `BOT_ALLOWED_CHAT_IDS` está vacío, el bot mostrará el ID del chat sin revelar datos. Agrégalo a `bot/.env` —varios IDs se separan con comas— y recrea el contenedor para cargar el nuevo entorno:
+
+```bash
+docker compose up -d --force-recreate bot
+```
+
+## URLs locales
+
+| Servicio | URL |
+| --- | --- |
+| Aplicación web | [http://localhost:3001](http://localhost:3001) |
+| API | [http://localhost:3000](http://localhost:3000) |
+| Swagger UI | [http://localhost:3000/docs](http://localhost:3000/docs) |
+| ReDoc | [http://localhost:3000/redoc](http://localhost:3000/redoc) |
+| pgAdmin | [http://localhost:8080](http://localhost:8080) |
+| PostgreSQL | `localhost:5432` |
+
+Para registrar el servidor en pgAdmin desde su contenedor usa `bd` como host, `5432` como puerto y las credenciales definidas en `.env`.
+
+## Variables de entorno
+
+### Infraestructura y backend — `.env`
+
+La plantilla versionada es [`.envexample`](.envexample).
+
+| Variable | Requerida | Valor de ejemplo/default | Propósito |
+| --- | --- | --- | --- |
+| `POSTGRES_USER` | Sí | `saludplus` | Usuario de PostgreSQL. |
+| `POSTGRES_PASSWORD` | Sí | `change-this-password` | Contraseña de PostgreSQL. Debe cambiarse. |
+| `POSTGRES_DB` | No | `fsdb` | Base creada y utilizada por el backend. |
+| `PGADMIN_DEFAULT_EMAIL` | Sí | `admin@saludplus.local` | Usuario de acceso a pgAdmin. |
+| `PGADMIN_DEFAULT_PASSWORD` | Sí | `change-this-password` | Contraseña de acceso a pgAdmin. Debe cambiarse. |
+| `JWT_SECRET_KEY` | Sí | Sin valor seguro predefinido | Firma los tokens JWT de la API. |
+| `SEED_DEMO_DATA` | No | `true` en Compose | Crea roles y usuarios demo de forma idempotente. |
+
+El backend también admite `JWT_ALGORITHM` (`HS256`) y `ACCESS_TOKEN_EXPIRE_MINUTES` (`30`) cuando se ejecuta directamente.
+
+### Bot — `bot/.env`
+
+La plantilla versionada es [`bot/.env.example`](bot/.env.example).
+
+| Variable | Requerida | Valor de plantilla | Propósito |
+| --- | --- | --- | --- |
+| `BOT_TOKEN` | Sí | — | Token privado entregado por `@BotFather`. |
+| `OPENAI_API_KEY` | Sí | — | Credencial privada de OpenAI. |
+| `OPENAI_MODEL` | No | `gpt-5.4-mini` | Modelo usado para preguntas en lenguaje natural. |
+| `API_BASE_URL` | No | `http://backend:4000` | Dirección interna del backend en Compose. |
+| `API_USERNAME` | Sí | — | Usuario con el que el bot obtiene su JWT. |
+| `API_PASSWORD` | Sí | — | Contraseña del usuario anterior. |
+| `BOT_ALLOWED_CHAT_IDS` | Recomendado | Vacío | Lista de chats autorizados; vacío bloquea el acceso a datos. |
+| `BOT_DASHBOARD_DAYS` | No | `30` | Días incluidos en las métricas (`1`–`365`). |
+| `BOT_PATIENT_LIMIT` | No | `100` | Máximo de pacientes consultados (`1`–`500`). |
+| `BOT_MAX_OUTPUT_TOKENS` | No | `700` | Límite de respuesta del modelo (`100`–`4000`). |
+
+Al ejecutar el bot directamente en el host, cambia `API_BASE_URL` a `http://localhost:3000`.
+
+### Frontend — `frontend/.env.local`
+
+La plantilla versionada es [`frontend/.env.example`](frontend/.env.example).
+
+| Variable | Requerida | Default | Propósito |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_URL` | No | `http://localhost:3000` | URL de la API consumida desde el navegador. |
+
+Las variables que comienzan con `NEXT_PUBLIC_` son públicas y se incorporan al bundle del navegador. No guardes secretos en ellas.
+
+## Usuarios de demostración
+
+Con `SEED_DEMO_DATA=true` están disponibles únicamente para desarrollo:
+
+| Rol | Usuario | Contraseña |
+| --- | --- | --- |
+| Administrador | `admin.demo` | `Demo2026*` |
+| Operador | `operador.demo` | `Demo2026*` |
+
+Estas credenciales no deben habilitarse en un entorno público. Para producción usa `SEED_DEMO_DATA=false` y crea usuarios con credenciales propias.
+
+## API y flujos
+
+Todos los módulos funcionales, excepto la obtención inicial de credenciales y el registro actual, utilizan autenticación Bearer JWT.
+
+| Módulo | Rutas principales | Uso |
+| --- | --- | --- |
+| Autenticación | `/auth/token`, `/auth/me`, `/auth/register` | Login, sesión y alta de usuarios. |
+| Dashboard | `/dashboard` | Métricas y filtros por período. |
+| Pacientes | `/pacientes/`, `/pacientes/importar-csv` | CRUD, listado paginado e importación. |
+| Administración | `/roles/`, `/usuarios/`, `/registros-login/` | Roles, usuarios y auditoría de accesos. |
+| Productos | `/v2/` | Creación, consulta y eliminación autenticadas. |
+
+El flujo web es: credenciales → `POST /auth/token` → cookie con JWT → interceptor Axios → rutas protegidas. El bot realiza el mismo login con su cuenta de API, renueva el token cuando es necesario y solo ejecuta consultas.
+
+## Comandos del bot
+
+| Comando | Acción |
+| --- | --- |
+| `/start` | Muestra la ayuda o el ID necesario para autorizar el chat. |
+| `/dashboard` | Resume las métricas del período configurado. |
+| `/pacientes` | Lista pacientes recientes. |
+| `/buscar <texto>` | Busca por nombre, documento, ciudad o EPS. |
+| Mensaje libre | Consulta dashboard y pacientes relevantes para responder con OpenAI. |
+
+## Ejecución local sin Docker
+
+### Backend
+
+Inicia PostgreSQL, instala las dependencias y define las variables antes de levantar Uvicorn. Este ejemplo usa PowerShell y el puerto esperado por el frontend:
 
 ```powershell
-docker compose up -d --build
+docker compose up -d bd
+Set-Location backend
+py -3.10 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+$settings = @{}
+Get-Content ../.env | Where-Object { $_ -match '^[^#][^=]*=' } | ForEach-Object {
+    $name, $value = $_ -split '=', 2
+    $settings[$name.Trim()] = $value.Trim()
+}
+$dbUser = [uri]::EscapeDataString($settings['POSTGRES_USER'])
+$dbPassword = [uri]::EscapeDataString($settings['POSTGRES_PASSWORD'])
+$dbName = [uri]::EscapeDataString($settings['POSTGRES_DB'])
+$env:DATABASE_URL = "postgresql://${dbUser}:${dbPassword}@localhost:5432/${dbName}"
+$env:JWT_SECRET_KEY = $settings['JWT_SECRET_KEY']
+$env:SEED_DEMO_DATA = $settings['SEED_DEMO_DATA']
+uvicorn src.main:app --host 0.0.0.0 --port 3000 --reload
 ```
 
-**Documentación:** [Dockerfile](https://docs.docker.com/reference/dockerfile/) · [Docker Compose](https://docs.docker.com/reference/compose-file/) · [FastAPI en Docker](https://fastapi.tiangolo.com/deployment/docker/)
+En macOS o Linux activa el entorno con `source .venv/bin/activate` y define las variables con `export`.
 
-## 12. Flujos esenciales
+### Bot
 
-### Registro y login
+Con la API disponible en `http://localhost:3000`:
+
+```powershell
+Set-Location bot
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+# Edita .env y usa API_BASE_URL=http://localhost:3000
+python -m src.main
+```
+
+## Verificación y calidad
+
+```bash
+# Validar el Compose sin imprimir las variables resueltas
+docker compose config --quiet
+
+# Pruebas unitarias del bot (con su entorno virtual activo)
+cd bot
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+
+# Calidad y build del frontend
+cd ../frontend
+npm run lint
+npm run build
+```
+
+Actualmente el repositorio contiene pruebas unitarias para los helpers del bot; el backend y el frontend aún no cuentan con suites automatizadas.
+
+## Operación con Docker
+
+```bash
+# Estado
+docker compose ps
+
+# Logs de todos los servicios
+docker compose logs -f
+
+# Logs específicos
+docker compose logs -f backend bot
+
+# Reconstruir un servicio
+docker compose up --build -d backend
+
+# Detener y conservar los datos
+docker compose down
+```
+
+`docker compose down -v` elimina permanentemente el volumen de PostgreSQL y todos sus datos. Úsalo solo cuando realmente quieras reinicializar la base.
+
+## Estructura del repositorio
 
 ```text
-POST /auth/register → UserCreate → hash_password → users.hashed_password
-POST /auth/token    → verificar hash → JWT con sub=user.username
-GET  /auth/me       → Bearer token → get_current_user → UserOut
+.
+├── backend/
+│   ├── src/
+│   │   ├── core/          # Configuración y seguridad
+│   │   ├── db/            # Sesión, base y datos demo
+│   │   ├── dependencies/  # Dependencias de autenticación
+│   │   ├── dtos/          # Esquemas Pydantic
+│   │   ├── models/        # Modelos SQLAlchemy
+│   │   └── routers/       # Endpoints FastAPI
+│   ├── backend.Dockerfile
+│   └── requirements.txt
+├── bot/
+│   ├── src/               # Handlers, cliente API y asistente OpenAI
+│   ├── tests/             # Pruebas unitarias
+│   ├── .env.example
+│   └── bot.Dockerfile
+├── frontend/
+│   ├── app/               # Rutas del App Router
+│   ├── components/        # Shell, tema y componentes UI
+│   ├── lib/               # Cliente API, auth y tipos
+│   └── public/            # Recursos estáticos
+├── mockups-data/          # Mockups, datos sintéticos y material de referencia
+├── compose.yml
+└── .envexample
 ```
 
-### Ruta protegida
+## Solución de problemas
 
-```text
-request /v2 → OAuth2PasswordBearer → decode_access_token
-            → buscar User.username por sub → validar is_active → ejecutar endpoint
-```
+| Problema | Revisión recomendada |
+| --- | --- |
+| El frontend no conecta con la API | Confirma que el backend esté en `localhost:3000` y revisa `NEXT_PUBLIC_API_URL`. Reinicia el build si cambiaste una variable pública. |
+| El bot no conecta con la API | Usa `http://backend:4000` dentro de Compose y `http://localhost:3000` al ejecutarlo directamente. |
+| El bot rechaza las credenciales | Verifica `API_USERNAME`, `API_PASSWORD` y que el usuario exista y esté activo. |
+| El bot solo muestra el chat ID | Es el comportamiento seguro esperado; agrega el ID a `BOT_ALLOWED_CHAT_IDS` y reinicia el bot. |
+| PostgreSQL conserva credenciales anteriores | Las variables de inicialización no cambian un volumen ya creado. Conserva las credenciales originales o reinicializa el volumen sabiendo que se perderán los datos. |
+| Un puerto ya está ocupado | Libera o cambia el mapeo de `3000`, `3001`, `5432` o `8080`, y ajusta las URLs/CORS cuando corresponda. |
 
-### Producto
+## Seguridad y uso responsable
 
-```text
-JSON → ProductoCreate → Producto ORM → commit → ProductoOut → JSON
-```
+- No subas `.env`, tokens, contraseñas, API keys ni datos clínicos reales al repositorio.
+- Cambia todos los valores de ejemplo, genera un `JWT_SECRET_KEY` robusto y desactiva `SEED_DEMO_DATA` fuera de desarrollo.
+- Mantén `BOT_ALLOWED_CHAT_IDS` como lista explícita. El token de Telegram debe tratarse como una contraseña.
+- Las preguntas libres del bot envían a OpenAI el contexto seleccionado del dashboard y de pacientes. Úsalo solo cuando las políticas, autorizaciones y acuerdos de tratamiento de datos aplicables lo permitan.
+- El Compose incluido usa recarga automática, montaje del código y pgAdmin; está orientado al desarrollo local, no a un despliegue de producción.
+- Antes de publicar la API, restringe CORS, protege el aprovisionamiento de usuarios, añade migraciones y revisa la exposición de puertos y logs.
 
-## 13. Checklist y errores comunes
+## Documentación adicional
 
-Al agregar un recurso nuevo:
+- [Documentación del bot](bot/README.md)
+- [Documentación del frontend](frontend/README.md)
 
-1. Crear `models/recurso.py`.
-2. Crear `dtos/recurso.py`.
-3. Crear `routers/recurso.py`.
-4. Importar el modelo antes de `create_all()`.
-5. Incluir el router en `main.py`.
-6. Agregar `dependencies=[Depends(get_current_user)]` a cada operación que deba ser privada, o proteger todo el `APIRouter` con esa dependencia.
-7. Inyectar `db: Session = Depends(get_db)` en las operaciones que consulten o modifiquen la base de datos.
-8. Crear una migración si cambia una tabla existente.
+## Soporte y contribuciones
 
-Errores frecuentes:
+Para reportar un error o proponer una mejora, abre un [issue en GitHub](https://github.com/ccgg1997/docker-c/issues) con los pasos para reproducirlo. Antes de enviar un pull request, valida el Compose, ejecuta las pruebas del bot y comprueba `npm run lint` y `npm run build` en el frontend.
 
-- `422` en `/auth/token`: se envió JSON; debe enviarse un formulario.
-- `401`: falta el Bearer token o es inválido/expiró.
-- `403` en `/auth/token`: el usuario existe, pero está inactivo.
-- Endpoint nuevo accesible sin token: faltó agregar `Depends(get_current_user)` al endpoint o al router.
-- Cambio de columna no aplicado: `create_all()` no migra tablas existentes.
-- Dependencia nueva no instalada: ejecutar `docker compose up -d --build`.
-- Backend reiniciándose con `database ... does not exist`: `POSTGRES_DB` no coincide con la base incluida en `database_url`.
-- `tags` continúa como `varchar[]`: crear una migración de `ARRAY` a `JSON`.
+Como referencia para las herramientas utilizadas, consulta la documentación oficial de [Docker Compose](https://docs.docker.com/compose/), [Next.js](https://nextjs.org/docs/app/getting-started/installation), [FastAPI](https://fastapi.tiangolo.com/tutorial/), [Telegram Bots](https://core.telegram.org/bots/tutorial) y la [API de OpenAI](https://platform.openai.com/docs/quickstart).

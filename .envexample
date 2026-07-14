@@ -1,9 +1,14 @@
-POSTGRES_USER=
-POSTGRES_PASSWORD=
+# PostgreSQL (solo valores de ejemplo para desarrollo local)
+POSTGRES_USER=saludplus
+POSTGRES_PASSWORD=change-this-password
 POSTGRES_DB=fsdb
 
-PGADMIN_DEFAULT_EMAIL=
-PGADMIN_DEFAULT_PASSWORD=
+# Acceso local a pgAdmin
+PGADMIN_DEFAULT_EMAIL=admin@saludplus.local
+PGADMIN_DEFAULT_PASSWORD=change-this-password
 
-JWT_SECRET_KEY=
+# Firma de los tokens de la API. Sustituye este valor por uno largo y aleatorio.
+JWT_SECRET_KEY=replace-with-a-long-random-secret
+
+# Crea roles y usuarios de demostración al iniciar el backend.
 SEED_DEMO_DATA=true
