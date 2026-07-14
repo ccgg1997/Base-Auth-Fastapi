@@ -41,6 +41,7 @@ services:
       - "3000:4000"
     environment:
       - database_url=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@bd/${POSTGRES_DB}
+      - jwt_secret_key=${JWT_SECRET_KEY}
     depends_on:
       bd:
           condition: service_healthy

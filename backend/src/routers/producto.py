@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from src.db.session import get_db
+from src.dependencies.auth import get_current_user
 from src.models.product import Producto
 from src.dtos.product import ProductoCreate, ProductoOut
 from fastapi import Body
@@ -11,7 +12,7 @@ from fastapi import Body
 router = APIRouter(prefix="/v2", tags=["productos"])
 
 
-@router.post("/", response_model=ProductoOut)
+@router.post("/", response_model=ProductoOut, dependencies=[Depends(get_current_user)])
 def crear_producto(data: ProductoCreate, db: Session = Depends(get_db)):
     existing_product = (
         db.query(Producto)
@@ -40,7 +41,7 @@ def crear_producto(data: ProductoCreate, db: Session = Depends(get_db)):
     return producto
 
 
-@router.delete("/", response_model=str)
+@router.delete("/", response_model=str,dependencies=[Depends(get_current_user)])
 def eliminar_producto(productName: str = Body(embed = True), db: Session = Depends(get_db)):
     existing_product = (
         db.query(Producto)
@@ -62,12 +63,12 @@ def eliminar_producto(productName: str = Body(embed = True), db: Session = Depen
     db.refresh(existing_product)
     return "Producto eliminado exitosamente"
 
-@router.get("/", response_model=list[ProductoOut])
+@router.get("/", response_model=list[ProductoOut], dependencies=[Depends(get_current_user)])
 def listar_productos(db: Session = Depends(get_db)):
     productos = db.query(Producto).filter(Producto.disponible == True).all()
     return productos
 
-@router.get("/{product_id}", response_model=ProductoOut)
+@router.get("/{product_id}", response_model=ProductoOut, dependencies=[Depends(get_current_user)])
 def obtener_producto(product_id: int, db: Session = Depends(get_db)):
     producto = db.query(Producto).filter(Producto.id == product_id, Producto.disponible == True).first()
     if producto is None:
