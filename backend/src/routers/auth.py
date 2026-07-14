@@ -7,6 +7,7 @@ from src.db.session import get_db
 from src.models.user import User
 from src.dependencies.auth import get_current_user
 from src.core.security import hash_password, verify_password, create_access_token
+from src.core.config import settings
 
 from src.dtos.auth import Token
 from src.dtos.user import UserCreate, UserOut
@@ -42,9 +43,15 @@ def login(
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Nombre de usuario o contraseña incorrectos")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="El usuario está inactivo")
 
     access_token = create_access_token(form_data.username)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "expires_in": settings.access_token_expire_minutes * 60,
+    }
 
 @router.get("/me", response_model=UserOut)
 def get_my_user(

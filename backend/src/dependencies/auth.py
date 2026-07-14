@@ -14,7 +14,6 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudo validar las credenciales",
@@ -23,11 +22,10 @@ def get_current_user(
     try:
         payload = decode_access_token(token)
         user_id: str = payload.get("sub")
-    except(InvalidTokenError, KeyError,TypeError, ValueError) as exec:
-        raise credentials_exception from exec
-    
+    except (InvalidTokenError, KeyError, TypeError, ValueError) as exc:
+        raise credentials_exception from exc
+
     user = db.query(User).filter(User.username == user_id).first()
-    if user is None:
+    if user is None or not user.is_active:
         raise credentials_exception
     return user
-  

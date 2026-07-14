@@ -14,7 +14,16 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
+
+The frontend uses the FastAPI backend at `http://127.0.0.1:3000` by default. To
+use another address, create a `.env.local` file:
+
+```bash
+BACKEND_URL=http://127.0.0.1:3000
+```
+
+`BACKEND_URL` is server-only and must not use the `NEXT_PUBLIC_` prefix.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
