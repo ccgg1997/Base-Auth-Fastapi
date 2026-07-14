@@ -25,7 +25,7 @@ def get_current_user(
     except (InvalidTokenError, KeyError, TypeError, ValueError) as exc:
         raise credentials_exception from exc
 
-    user = db.query(User).filter(User.username == user_id).first()
-    if user is None or not user.is_active:
+    user = db.query(User).filter(User.usuario == user_id).first()
+    if user is None or not user.activo:
         raise credentials_exception
     return user

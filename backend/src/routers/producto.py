@@ -49,7 +49,7 @@ def eliminar_producto(productName: str = Body(embed = True), db: Session = Depen
         .first()
     )
     if existing_product is None:
-        raise HTTPException(status_code=400, detail="El nombre de producto ya existe")
+        raise HTTPException(status_code=400, detail="El nombre de producto no existe")
 
     try:
         existing_product.disponible = False
@@ -58,7 +58,7 @@ def eliminar_producto(productName: str = Body(embed = True), db: Session = Depen
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="El nombre de producto ya existe",
+            detail="El nombre de producto no existe",
         ) 
     db.refresh(existing_product)
     return "Producto eliminado exitosamente"

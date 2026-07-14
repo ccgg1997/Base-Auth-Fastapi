@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from src.db.base import Base
 from src.db.session import engine
 from src.routers import producto, auth
-from src.models import product, user
+from src.models import login_record, patient, product, role, user
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
