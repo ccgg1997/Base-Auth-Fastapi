@@ -58,6 +58,7 @@ services:
       start_period: 10s
     volumes:
       - ./backend:/app
+      - ./mockups-data/Datos_Sinteticos_pacientes.csv:/seed-data/Datos_Sinteticos_pacientes.csv:ro
   frontend:
     container_name: frontend
     build:

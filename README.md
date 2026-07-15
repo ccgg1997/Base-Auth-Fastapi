@@ -138,6 +138,11 @@ Disponibles cuando `SEED_DEMO_DATA=true`:
 - Administrador: `admin.demo` / `Demo2026*`
 - Operador: `operador.demo` / `Demo2026*`
 
+Si la tabla `pacientes` está vacía, el backend importa automáticamente los
+1.000 registros de
+[`Datos_Sinteticos_pacientes.csv`](mockups-data/Datos_Sinteticos_pacientes.csv).
+Los reinicios posteriores no duplican la información.
+
 Son credenciales exclusivas para desarrollo local.
 
 ## Configurar el bot
@@ -245,16 +250,6 @@ Agrega el ID a `BOT_ALLOWED_CHAT_IDS` y recrea el contenedor.
 **PostgreSQL conserva las credenciales anteriores**
 
 Las variables de inicialización no modifican un volumen ya creado.
-
-## Seguridad
-
-- Nunca subas `.env`, tokens, contraseñas o API keys.
-- Cambia todas las credenciales de ejemplo.
-- Usa `SEED_DEMO_DATA=false` fuera de desarrollo.
-- Limita `BOT_ALLOWED_CHAT_IDS` a chats autorizados.
-- Las preguntas libres pueden enviar contexto seleccionado a OpenAI.
-  Verifica las políticas aplicables antes de utilizar datos reales.
-- `docker compose down -v` elimina permanentemente la base de datos.
 
 ## Más información
 
